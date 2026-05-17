@@ -1,5 +1,6 @@
 PyYAML==6.0.3
 StandardScaler==0.5
+category_encoders==2.9.0
 charset-normalizer==3.4.7
 jupyter_core==5.9.1
 kaggle==2.1.0

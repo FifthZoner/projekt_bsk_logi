@@ -5,13 +5,9 @@ import shutil
 import pandas as pd
 import kagglehub
 
-import step_1_add_column_names as step_1
-import step_2_fix_data_errors as step_2
-import step_3_group_by_sessions as step_3
-import step_4_scale_standardise as step_4
-import step_5_merge as step_5
-import step_6_category_encoding as step_6
-
+from steps import step_3_group_by_sessions as step_3, step_1_add_column_names as step_1, \
+    step_4_scale_standardise as step_4, step_6_category_encoding as step_6, step_5_merge as step_5, \
+    step_2_fix_data_errors as step_2
 
 raw_dir = 'raw_data'
 processed_dir = 'processed_data'
@@ -34,16 +30,24 @@ files = [
 
 for file in files:
     if not os.path.exists(f'{raw_dir}/{file}'):
+        print("Missing raw files found, re-downloading...")
         os.removedirs(raw_dir)
 
         path = kagglehub.dataset_download("mrwellsdavid/unsw-nb15")
         shutil.copytree(path + "/", raw_dir + "/")
 
-        with open(f'{raw_dir}/NUSW-NB15_features.csv', 'r', encoding='1252') as f:
-            content = f.read()
-        with open(f'{raw_dir}/NUSW-NB15_features.csv', 'w', encoding='utf-8') as f:
-            f.write(content)
+        for file in os.listdir(raw_dir):
+            print(f'Re-encoding {raw_dir}/{file}...')
+            with open(f'{raw_dir}/{file}', 'r', encoding='1252') as f:
+                content = f.read()
+            with open(f'{raw_dir}/{file}', 'w', encoding='utf-8') as f:
+                f.write(content)
 
+        print("Creating labeled and merged raw file...")
+        raw_files = [pd.read_csv(f'{raw_dir}/{x}', low_memory=False, header=None) for x in files]
+        step_1.add_column_names(step_5.merge(raw_files, f'{raw_dir}/intermediate_raw.csv'), f'{raw_dir}/raw.csv')
+
+        print("Raw data ready!")
         break
 
 results = []
