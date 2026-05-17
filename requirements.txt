@@ -1,0 +1,9 @@
+PyYAML==6.0.3
+StandardScaler==0.5
+charset-normalizer==3.4.7
+jupyter_core==5.9.1
+kaggle==2.1.0
+kagglehub==1.0.1
+mdurl==0.1.2
+pd==0.0.4
+pip-chill==1.0.5
