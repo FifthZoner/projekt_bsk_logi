@@ -67,16 +67,29 @@ for file in files:
     len_3 = len(data)
     print(f'Dataset size change (2 -> 3): {len_2} -> {len_3}')
 
-    # kroki stricte pod przygotowanie do uczenia maszynowego
     data = step_4.scale_standardise(data, f'{processed_dir}/step_4_{file}')
     len_4 = len(data)
 
     results.append(data)
 
 print('')
-
+print('Creating merged file for step 5 files...')
 data = step_5.merge(results, f'{processed_dir}/step_5_{'_'.join(files)}')
 
 step_6.category_encoding(data, results_dir)
+
+print('')
+print("Creating merged file for step 2 files...")
+step_2_files = []
+for file in files:
+    step_2_files.append(pd.read_csv(f'{processed_dir}/step_2_{file}', low_memory=False))
+step_5.merge(step_2_files, f'{processed_dir}/step_2_{'_'.join(files)}')
+
+print('')
+print("Creating merged file for step 3 files...")
+step_3_files = []
+for file in files:
+    step_3_files.append(pd.read_csv(f'{processed_dir}/step_3_{file}', low_memory=False))
+step_5.merge(step_3_files, f'{processed_dir}/step_3_{'_'.join(files)}')
 
 print('\nDone!')

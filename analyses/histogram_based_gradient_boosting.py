@@ -86,6 +86,26 @@ run_for_file('raw_data/raw.csv',
                  max_leaf_nodes=31,
                  random_state=42
              ))
+
+run_for_file('processed_data/step_2_UNSW-NB15_1.csv_UNSW-NB15_2.csv_UNSW-NB15_3.csv_UNSW-NB15_4.csv',
+             HistGradientBoostingClassifier(
+                 categorical_features='from_dtype',
+                 class_weight=None,
+                 max_iter=200,
+                 learning_rate=0.1,
+                 max_leaf_nodes=31,
+                 random_state=42
+             ))
+run_for_file('processed_data/step_3_UNSW-NB15_1.csv_UNSW-NB15_2.csv_UNSW-NB15_3.csv_UNSW-NB15_4.csv',
+             HistGradientBoostingClassifier(
+                 categorical_features='from_dtype',
+                 class_weight='balanced',
+                 max_iter=400,
+                 learning_rate=0.05,
+                 max_leaf_nodes=63,
+                 min_samples_leaf=50,
+                 random_state=42
+             ))
 run_for_file('processed_data/step_5_UNSW-NB15_1.csv_UNSW-NB15_2.csv_UNSW-NB15_3.csv_UNSW-NB15_4.csv',
              HistGradientBoostingClassifier(
                  categorical_features='from_dtype',

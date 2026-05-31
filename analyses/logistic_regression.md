@@ -235,6 +235,456 @@ state_TXD: ELIMINATED (0.0000)
 
 
 
+## Wyniki dla danych oczyszczonych
+```
+LogisticRegression(
+    l1_ratio=1.0,  
+    solver='saga',
+    C=0.1,
+    class_weight=None,
+    random_state=42
+)
+```
+```
+Confusion Matrix:
+[[621368   6947]
+ [  2869  92352]]
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       1.00      0.99      0.99    628315
+           1       0.93      0.97      0.95     95221
+
+    accuracy                           0.99    723536
+   macro avg       0.96      0.98      0.97    723536
+weighted avg       0.99      0.99      0.99    723536
+
+ROC-AUC Score: 0.9990
+
+Coefficients / Feature Elimination:
+ct_state_ttl: 1.8810
+sport: 1.1493
+sttl: 1.1382
+state_REQ: -0.7955
+dttl: 0.7909
+dmeansz: 0.7076
+service_smtp: 0.6176
+service_dns: 0.5027
+service_http: 0.4705
+proto_unas: 0.4478
+state_FIN: 0.4354
+state_CON: -0.3546
+proto_tcp: -0.3391
+swin: -0.3363
+synack: -0.3174
+sloss: 0.2673
+is_ftp_login: 0.2503
+proto_arp: -0.2249
+Dload: 0.2110
+dwin: -0.1927
+service_pop3: 0.1912
+proto_udp: 0.1860
+trans_depth: 0.1826
+proto_ospf: 0.1747
+ct_srv_dst: -0.1696
+tcprtt: -0.1683
+ct_srv_src: -0.1654
+ct_dst_sport_ltm: 0.1615
+proto_sctp: 0.1589
+ct_dst_src_ltm: -0.1573
+sbytes: 0.1411
+service_ssh: 0.0997
+smeansz: -0.0951
+ct_src_ltm: 0.0903
+dbytes: -0.0810
+service_ftp: 0.0803
+Sintpkt: -0.0707
+res_bdy_len: -0.0698
+proto_any: 0.0688
+proto_swipe: 0.0635
+proto_mobile: 0.0617
+proto_sun-nd: 0.0616
+proto_gre: 0.0605
+service_dhcp: 0.0575
+proto_sep: 0.0573
+proto_rsvp: 0.0563
+proto_ipv6: 0.0563
+ct_ftp_cmd: 0.0542
+proto_pim: 0.0541
+is_sm_ips_ports: -0.0523
+stcpb: -0.0520
+Sload: -0.0520
+proto_igmp: -0.0500
+state_INT: -0.0462
+proto_wb-expak: 0.0433
+proto_fire: 0.0430
+proto_isis: 0.0415
+proto_irtp: 0.0413
+proto_sat-expak: 0.0412
+proto_tlsp: 0.0412
+proto_iplt: 0.0412
+proto_zero: 0.0412
+proto_crtp: 0.0411
+proto_dcn: 0.0411
+proto_cftp: 0.0411
+proto_pnni: 0.0410
+proto_ipv6-frag: 0.0410
+proto_visa: 0.0409
+proto_bna: 0.0409
+proto_iso-tp4: 0.0408
+proto_idpr: 0.0407
+proto_ipx-n-ip: 0.0406
+proto_ipcv: 0.0406
+proto_pup: 0.0405
+proto_cphb: 0.0404
+proto_vmtp: 0.0404
+proto_ipv6-route: 0.0402
+proto_trunk-1: 0.0402
+proto_rvd: 0.0401
+proto_netblt: 0.0400
+proto_ipnip: 0.0399
+proto_larp: 0.0399
+proto_eigrp: 0.0399
+proto_hmp: 0.0399
+proto_idpr-cmtp: 0.0398
+proto_mfe-nsp: 0.0398
+proto_stp: 0.0398
+proto_crudp: 0.0398
+proto_pgm: 0.0398
+proto_ddp: 0.0398
+proto_egp: 0.0397
+proto_prm: 0.0397
+proto_ttp: 0.0397
+proto_vines: 0.0397
+proto_xtp: 0.0397
+proto_leaf-1: 0.0396
+proto_ippc: 0.0396
+proto_skip: 0.0396
+proto_ggp: 0.0396
+proto_merit-inp: 0.0395
+proto_smp: 0.0395
+proto_sccopmce: 0.0395
+proto_sps: 0.0394
+proto_idrp: 0.0394
+proto_chaos: 0.0392
+proto_etherip: 0.0392
+proto_wsn: 0.0392
+proto_nvp: 0.0391
+proto_leaf-2: 0.0391
+proto_mtp: 0.0391
+proto_qnx: 0.0391
+proto_encap: 0.0391
+proto_snp: 0.0390
+proto_il: 0.0390
+proto_mhrp: 0.0390
+proto_compaq-peer: 0.0390
+proto_sm: 0.0389
+proto_tcf: 0.0389
+proto_iso-ip: 0.0388
+proto_uti: 0.0388
+proto_xnet: 0.0387
+proto_emcon: 0.0387
+proto_secure-vmtp: 0.0387
+dtcpb: -0.0386
+proto_kryptolan: 0.0385
+proto_narp: 0.0385
+proto_sprite-rpc: 0.0384
+proto_gmtp: 0.0384
+proto_br-sat-mon: 0.0384
+proto_sdrp: 0.0384
+proto_vrrp: 0.0384
+proto_ipip: 0.0384
+proto_ddx: 0.0383
+proto_ip: 0.0383
+proto_pri-enc: 0.0383
+proto_tp++: 0.0382
+proto_ifmp: 0.0382
+proto_pvp: 0.0382
+proto_trunk-2: 0.0382
+proto_fc: 0.0381
+proto_micp: 0.0381
+proto_scps: 0.0381
+proto_nsfnet-igp: 0.0380
+proto_pipe: 0.0379
+proto_rdp: 0.0379
+proto_xns-idp: 0.0379
+proto_aes-sp3-d: 0.0378
+proto_mux: 0.0378
+proto_bbn-rcc: 0.0378
+proto_cbt: 0.0378
+proto_ipcomp: 0.0378
+proto_iatp: 0.0375
+proto_igp: 0.0374
+proto_srp: 0.0374
+proto_a/n: 0.0371
+proto_ipv6-no: 0.0371
+proto_sat-mon: 0.0370
+Djit: 0.0369
+proto_ax.25: 0.0369
+proto_wb-mon: 0.0367
+proto_i-nlsp: 0.0366
+proto_ptp: 0.0365
+proto_aris: 0.0364
+proto_dgp: 0.0364
+proto_ipv6-opts: 0.0362
+proto_st2: 0.0362
+state_RST: 0.0361
+proto_l2tp: 0.0361
+proto_cpnx: 0.0356
+proto_ib: 0.0353
+proto_argus: 0.0350
+Spkts: -0.0340
+Dintpkt: 0.0332
+service_irc: 0.0256
+ct_flw_http_mthd: -0.0254
+service_snmp: 0.0239
+Sjit: -0.0234
+Dpkts: 0.0214
+ackdat: 0.0203
+ct_src_dport_ltm: 0.0176
+ct_dst_ltm: 0.0160
+state_CLO: -0.0160
+dur: 0.0137
+dloss: 0.0090
+state_ECR: -0.0090
+state_ECO: -0.0074
+state_URH: 0.0068
+proto_icmp: -0.0045
+state_TST: -0.0016
+state_URN: -0.0016
+state_MAS: -0.0015
+dsport: -0.0015
+proto_rtp: -0.0001
+proto_udt: ELIMINATED (0.0000)
+state_PAR: ELIMINATED (0.0000)
+state_TXD: ELIMINATED (0.0000)
+```
+## Wyniki dla danych zgrupowanych bez standaryzacji
+```
+LogisticRegression(
+    l1_ratio=1.0,
+    solver='saga',
+    C=0.1,
+    class_weight='balanced',
+    random_state=42
+)
+```
+```
+Confusion Matrix:
+[[527677   9677]
+ [    64  19901]]
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       1.00      0.98      0.99    537354
+           1       0.67      1.00      0.80     19965
+
+    accuracy                           0.98    557319
+   macro avg       0.84      0.99      0.90    557319
+weighted avg       0.99      0.98      0.98    557319
+
+ROC-AUC Score: 0.9950
+
+Coefficients / Feature Elimination:
+dttl: 1.5971
+sport: 0.6691
+state_INT: 0.5322
+dmeansz: 0.4771
+sttl: 0.4032
+proto_udp: 0.3894
+proto_tcp: -0.3624
+swin: -0.3607
+service_smtp: 0.3492
+state_CON: -0.3468
+proto_arp: -0.3398
+service_http: 0.2921
+dwin: -0.2907
+service_dns: -0.2778
+ct_state_ttl: 0.2531
+synack: -0.2314
+ct_dst_sport_ltm: -0.2224
+state_FIN: 0.2152
+ct_srv_dst: -0.2112
+service_pop3: 0.1907
+sloss: 0.1513
+is_ftp_login: 0.1304
+tcprtt: -0.1254
+ct_srv_src: -0.1178
+ct_src_dport_ltm: 0.0993
+proto_iso-tp4: 0.0878
+proto_pgm: 0.0818
+state_RST: 0.0799
+trans_depth: 0.0790
+sbytes: 0.0770
+proto_crudp: 0.0709
+Spkts: -0.0705
+ct_dst_src_ltm: -0.0652
+Dintpkt: 0.0648
+stcpb: -0.0578
+state_REQ: -0.0574
+dtcpb: -0.0550
+Dload: 0.0535
+proto_sat-mon: 0.0527
+proto_sctp: 0.0520
+ct_ftp_cmd: 0.0491
+proto_rvd: 0.0480
+dur: 0.0446
+service_snmp: 0.0442
+proto_gre: 0.0418
+ct_src_ltm: 0.0416
+dsport: 0.0403
+proto_igmp: -0.0402
+service_ftp: 0.0393
+is_sm_ips_ports: -0.0380
+service_dhcp: 0.0379
+Sintpkt: 0.0369
+Djit: 0.0360
+proto_ipv6: 0.0349
+proto_hmp: 0.0301
+dbytes: -0.0295
+proto_xtp: 0.0276
+Sjit: -0.0234
+ct_flw_http_mthd: -0.0230
+proto_vmtp: 0.0219
+smeansz: 0.0217
+proto_netblt: 0.0211
+service_ssh: 0.0209
+state_CLO: -0.0208
+Sload: 0.0194
+proto_vines: 0.0186
+proto_mobile: 0.0183
+proto_swipe: 0.0182
+Dpkts: 0.0179
+proto_wb-expak: 0.0177
+state_ECR: -0.0172
+proto_scps: 0.0169
+proto_visa: 0.0167
+proto_ipv6-opts: 0.0164
+proto_sun-nd: 0.0154
+proto_sm: 0.0153
+proto_pnni: 0.0145
+res_bdy_len: -0.0144
+proto_leaf-1: 0.0143
+proto_ospf: -0.0141
+proto_pim: 0.0141
+proto_ipip: 0.0141
+proto_nvp: 0.0141
+proto_unas: 0.0140
+proto_sep: 0.0140
+proto_bbn-rcc: 0.0136
+proto_igp: 0.0135
+proto_emcon: 0.0134
+proto_gmtp: 0.0131
+proto_iplt: 0.0129
+proto_argus: 0.0125
+proto_egp: 0.0125
+proto_prm: 0.0123
+proto_rtp: -0.0122
+proto_stp: 0.0122
+proto_chaos: 0.0122
+proto_xnet: 0.0119
+proto_bna: 0.0119
+proto_tcf: 0.0118
+proto_i-nlsp: 0.0117
+proto_ipcomp: 0.0116
+proto_pipe: 0.0116
+proto_zero: 0.0115
+proto_mfe-nsp: 0.0114
+proto_l2tp: 0.0114
+proto_snp: 0.0113
+proto_ddx: 0.0113
+proto_sps: 0.0113
+proto_skip: 0.0113
+proto_compaq-peer: 0.0112
+proto_ipv6-route: 0.0112
+proto_idpr: 0.0111
+proto_aris: 0.0111
+proto_eigrp: 0.0111
+proto_dgp: 0.0110
+proto_mhrp: 0.0110
+proto_ttp: 0.0110
+proto_ipcv: 0.0109
+proto_a/n: 0.0108
+proto_sat-expak: 0.0108
+proto_vrrp: 0.0108
+proto_fire: 0.0107
+proto_encap: 0.0107
+proto_secure-vmtp: 0.0107
+service_irc: 0.0106
+proto_tlsp: 0.0106
+proto_merit-inp: 0.0106
+proto_mux: 0.0106
+proto_wb-mon: 0.0106
+proto_sprite-rpc: 0.0105
+proto_iso-ip: 0.0105
+proto_ptp: 0.0104
+proto_ipx-n-ip: 0.0102
+proto_pri-enc: 0.0102
+proto_idrp: 0.0101
+proto_leaf-2: 0.0099
+proto_crtp: 0.0099
+proto_etherip: 0.0098
+proto_tp++: 0.0097
+proto_any: 0.0097
+proto_sccopmce: 0.0097
+proto_fc: 0.0097
+proto_irtp: 0.0096
+proto_kryptolan: 0.0096
+proto_wsn: 0.0095
+proto_narp: 0.0095
+proto_ib: 0.0095
+proto_xns-idp: 0.0094
+proto_uti: 0.0094
+proto_cftp: 0.0094
+proto_larp: 0.0094
+proto_sdrp: 0.0093
+proto_micp: 0.0092
+proto_mtp: 0.0092
+proto_ipv6-frag: 0.0091
+proto_cpnx: 0.0089
+proto_cphb: 0.0088
+proto_ax.25: 0.0088
+proto_qnx: 0.0087
+proto_pup: 0.0085
+proto_ggp: 0.0085
+proto_trunk-2: 0.0085
+proto_pvp: 0.0084
+proto_trunk-1: 0.0083
+proto_il: 0.0083
+proto_isis: 0.0083
+proto_ipv6-no: 0.0083
+proto_nsfnet-igp: 0.0081
+proto_dcn: 0.0081
+proto_aes-sp3-d: 0.0080
+proto_st2: 0.0075
+proto_idpr-cmtp: 0.0074
+proto_br-sat-mon: 0.0070
+proto_ipnip: 0.0070
+proto_rsvp: 0.0069
+proto_smp: 0.0069
+proto_ippc: 0.0068
+proto_rdp: 0.0066
+proto_ifmp: 0.0066
+proto_iatp: 0.0065
+proto_ip: 0.0063
+proto_cbt: 0.0062
+proto_icmp: -0.0061
+dloss: 0.0058
+ct_dst_ltm: 0.0053
+proto_ddp: 0.0052
+proto_srp: 0.0050
+state_ECO: -0.0045
+ackdat: 0.0035
+state_URH: 0.0024
+state_MAS: -0.0013
+state_URN: -0.0004
+state_TST: -0.0002
+proto_udt: ELIMINATED (0.0000)
+state_PAR: ELIMINATED (0.0000)
+state_TXD: ELIMINATED (0.0000)
+```
 ## Wyniki dla danych pre-procesowanych
 ```
 LogisticRegression(

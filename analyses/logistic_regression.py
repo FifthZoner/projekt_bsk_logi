@@ -110,6 +110,25 @@ run_for_file('raw_data/raw.csv',
                  random_state=42
              ))
 
+run_for_file('processed_data/step_2_UNSW-NB15_1.csv_UNSW-NB15_2.csv_UNSW-NB15_3.csv_UNSW-NB15_4.csv',
+             LogisticRegression(
+                 l1_ratio=1.0,
+                 solver='saga',
+                 C=0.1,
+                 class_weight=None,
+                 random_state=42
+             ))
+
+
+run_for_file('processed_data/step_3_UNSW-NB15_1.csv_UNSW-NB15_2.csv_UNSW-NB15_3.csv_UNSW-NB15_4.csv',
+             LogisticRegression(
+                 l1_ratio=1.0,
+                 solver='saga',
+                 C=0.1,
+                 class_weight='balanced',
+                 random_state=42
+             ))
+
 run_for_file('processed_data/step_5_UNSW-NB15_1.csv_UNSW-NB15_2.csv_UNSW-NB15_3.csv_UNSW-NB15_4.csv',
              LogisticRegression(
                  l1_ratio=1.0,
