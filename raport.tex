@@ -1,0 +1,585 @@
+\documentclass[12pt,twoside]{article}
+
+\usepackage{weiiszablon}
+
+\author{Tomasz Siedlecki, Szymon Jabłoński}
+
+% np. EF-123456, EN-654321, ...
+\studentID{173707, 173625}
+
+\title{Metody automatycznej poprawy jakości danych z czujników IoE i ruchu sieciowego}
+\titleEN{Methods for automatic enhancement of data quality from IoE sensors and networ traffic}
+
+
+%%% wybierz rodzaj pracy wpisując jeden z poniższych numerów: ...
+% 1 = inżynierska	% BSc
+% 2 = magisterska	% MSc
+% 3 = doktorska		% PhD
+% 4 = praca inżynierska
+%%% na miejsce zera w linijce poniżej
+\newcommand{\rodzajPracyNo}{0}
+
+
+%%% promotor
+\supervisor{dr inż. Mariusz Bolanowski}
+
+\supervisorEN{Mariusz Bolanowski, PhD}
+
+\abstract{Treść streszczenia po polsku}
+\abstractEN{Treść streszczenia po angielsku}
+
+\keywords{max. 5 słów kluczowych w 2 wierszach, oddzielanych przecinkami}
+\keywordsEN{max. five keywords in English}
+
+
+\begin{document}
+
+% strona tytułowa
+\maketitle
+
+\blankpage
+
+% spis treści
+\tableofcontents
+
+\clearpage
+\blankpage
+
+\section{Wstęp}
+
+Dynamiczny rozwój współczesnych środowisk sieciowych, w tym systemów zintegrowanych w ramach koncepcji Internetu Wszechrzeczy (ang. \emph{Internet of Everything} -- IoE), powoduje wytwarzanie ogromych ilości informacji telemetrycznych i o ruchu sieciowym. 
+W obszarze cyberbezpieczeństwa kluczowym wyzwaniem staje się skuteczna identyfikacja anomalii i incydentów naruszenia bezpieczeństwa przy użyciu algorytmów uczenia maszynowego.
+Możliwość rozpoznawania przez nie wzorców pozwala na wysoką skuteczność w wykrywaniu schematów behawioralnych, w których brakuje jasnej logiki i wyrażnych sygnatur, pozwalających na identyfikację przez tradycyjne systemu.
+Efektywność tych modeli jest jednak bezpośrednio uzależniona od zapewnionych danych wejściowych. 
+Surowe dane, pochodzące bezpośrednio z sensorów, czy też logów sieciowych, często zawierają w sobie rekordy z anomaliami pomiarowymi, brakującymi wartościami, czy też o niskiej użyteczności bez połączenia z szerszym kontekstem ich powstania.
+W związku z tym krytycznego znaczenia nabiera wieloetapowy proces przetwarzania (ang. \emph{data preprocessing pipeline}), którego zadaniem jest transformacja surowych danych do postaci kompletnej i przystosowanej do przetwarzania przez modele.
+
+Niniejsze opracowanie stanowi raport z projektu, mającego za cel zglębienie technik przetwarzania danych w celu poprawnienia rezultatów detekcji anomalii.
+Dotyczy on zarówno danych uzyskanych z czujników \texttt{IoE}, jak i zapisów ruchu sieciowego.
+
+% część o czujnikach
+
+% część o ruchu sieciowym
+W części projektu dotyczącej danych z ruchu sieciowego użyty został zestaw danych \emph{UNSW\_NB15} \cite{bib:datasetsieciowy}.
+Jest to zbiór powstały w Australijskim Centrum dla Cyberbezpieczeństwa (ACCS), stanowi on hybrydowy zbiór zawierający normalny ruch sieciowy, zmieszany z syntetycznymi zachowaniami odwzorowującymi ataki.
+Główny punkt ciężkości badań ulokowano w analizie wpływu poszczególnych etapów przygotowania danych na ostateczną architekturę matematyczną modeli uczenia maszynowego. 
+Laboratoryjne zestawy danych mają tendencję do monopolizowania uwagi klasyfikatorów przez statyczne zmienne nagłówkowe (takie jak unikalne sygnatury systemów operacyjnych czy sztucznie powtarzalne liczniki pakietów), co w warunkach rzeczywistych prowadzi do całkowitej ślepoty algorytmów. 
+W ramach projektu zaimplementowano potok danych, którego kluczowym elementem była transformacja strumienia pakietów do postaci logicznych, dwukierunkowych sesji sieciowych, a następnie poddanie ich rygorystycznemu skalowaniu i kodowaniu kategorycznemu.
+
+W celu weryfikacji wpływu operacji preprocesingu na zdolności detekcyjne, w pracy zaimplementowano i porównano trzy odmienne paradygmaty obliczeniowe: histogramowe wzmacnianie gradientu, las izolacyjny oraz regresję logistyczną z regularyzacją $L_1$. 
+Badania przeprowadzono eksperymentalnie na różnych etapach zaawansowania potoku danych. 
+Pozwoliło to na matematyczną ocenę, jak operacje takie jak agregacja sesyjna, uzupełnianie braków czy standaryzacja cech wpływają na stabilność wag modeli liniowych oraz na rozkład struktur decyzyjnych w modelach drzewiastych. 
+Za pomocą analizy ważności cech (zarówno metodą permutacji, jak i eliminacji cech Lasso) udowodniono, że prawidłowo zaprojektowany preprocesing wymusza na algorytmach porzucenie statycznych skrótów na rzecz analizy rzeczywistych paramertów sesji.
+
+\section{Architektura potoku przetwarzania danych sieciowych}
+
+Wykrywanie anomalii w rzeczywistych warunkach operacyjnych wymaga eliminacji podatności modeli uczenia maszynowego na błędy wynikające ze specyfiki danych testowych. 
+W ramach realizowanego projektu zaprojektowano i zaimplementowano modularny potok przetwarzania danych (ang. \emph{data pipeline}), którego nadrzędnym celem była transformacja surowych rekordów sieciowych do postaci niezależnej od konfiguracji środowiska laboratoryjnego. 
+Całość algorytmów preprocesingu została zaimplementowana w języku Python z wykorzystaniem bibliotek \texttt{pandas}, \texttt{numpy} oraz \texttt{scikit-learn}. 
+Proces przygotowania danych podzielono na sześć sekwencyjnych etapów, sterowanych z poziomu głównego skryptu wykonawczego.
+
+\subsection{Strukturyzacja i przekodowanie danych surowych}
+
+W pierwszym etapie prac (\texttt{step\_1\_add\_column\_names.py}) dokonano strukturyzacji surowych plików tekstowych formatu CSV. 
+Ze względu na brak wbudowanych nagłówków w plikach źródłowych, zaimplementowano procedurę automatycznego mapowania etykiet kolumn na podstawie załączonego w zestawie danych pliku z nazwami kolumn.
+Ponadto pliki są domyślnie zakodowane w formacie \texttt{Windows 1252}, zostały one przekodowane do standardu \texttt{UTF-8}.
+Operacja ta zapewniła integralność schematu danych przed dalszymi przekształceniami i pozwoliła na operacje na nazwach kolumn, ułatwiając prace z nimi.
+
+\subsection{Oczyszczanie i naprawa danych wejściowych}
+
+W drugim etapie (\texttt{step\_2\_fix\_data\_errors.py}) przeprowadzono czyszczenie danych oraz naprawę błędów typowania. 
+Implementacja tego modułu była kluczowa z punktu widzenia stabilności modeli matematycznych. 
+W ramach walidacji wykonano między innymi następujące operacje:
+\begin{itemize}
+	\item Sprawdzono poprawność strukturalną adresów IP (źródłowych \emph{srcip} oraz docelowych \emph{dstip}) przy użyciu walidatorów biblioteki \texttt{ipaddress}.
+	\item Dokonano konwersji i filtracji portów protokołów warstwy transportowej (\emph{sport}, \emph{dsport}), odrzucając rekordy wykraczające poza zakres od $0$ do $65535$.
+	\item Zaimplementowano mechanizm uzupełniania brakujących informacji o usługach (\emph{service}) na podstawie mapowania znanych portów aplikacji (np. porty 80, 443 zmapowano jako usługę HTTP, port 53 jako DNS).
+	\item Przeprowadzono filtrację stanów połączeń (\emph{state}), ograniczając je wyłącznie do skończonego zbioru dopuszczalnych flag sieciowych (np. \texttt{FIN}, \texttt{INT}, \texttt{CON}).
+\end{itemize}
+Po zakończeniu walidacji dokonano jawnej eliminacji wierszy zawierających niekompletne informacje (operacja \texttt{dropna}), co zabezpieczyło algorytmy klasyfikacyjne przed błędami braku danych.
+
+\subsection{Agregacja sesyjna i behawioralna transformacja strumienia}
+
+Kluczowym punktem inżynierii danych, determinującym odporność modeli na warunki rzeczywiste, był krok trzeci (\texttt{step\_3\_group\_by\_sessions.py}). 
+Tradycyjne podejście pakietowe jest podatne na zjawisko wycieku danych laboratoryjnych, ponieważ modele uczą się statycznych cech nagłówków pojedynczych ramek. 
+W celu wymuszenia analizy parametrów dotyczących całości sesji, zaimplementowano algorytm agregacji sesyjnej.
+
+Pojedyncze rekordy pakietowe zostały zgrupowane w logiczne połączenia przy użyciu klucza grupowania o formacie:
+\begin{equation}
+	K_{sesji} = \langle \text{srcip}, \text{sport}, \text{dstip}, \text{dsport}, \text{proto} \rangle
+\end{equation}
+
+Użyte zostały nazwy cech ze zbioru danych, gdzie:
+\begin{itemize}
+\item \texttt{srcip} - adres IP źródła,
+\item \texttt{sport} - port źródłowy,
+\item \texttt{dstip} - adres IP celu,
+\item \texttt{dsport} - port docelowy,
+\item \texttt{proto} - protokół przesyłanego pakietu,
+\end{itemize}
+
+Dla tak zdefiniowanych okien konwersacji wprowadzono zróżnicowaną logikę agregacji parametrów fizycznych i statystycznych:
+\begin{itemize}
+	\item Cechy wolumetryczne i czasowe, takie jak czas trwania połączenia (\emph{dur}), liczba przesłanych bajtów (\emph{sbytes}, \emph{dbytes}) czy utracone pakiety (\emph{sloss}, \emph{dloss}), zostały zsumowane w obrębie całej sesji.
+	\item Parametry dynamiczne, w tym średnie obciążenie sieciowe (\emph{Sload}, \emph{Dload}) oraz fluktuacje opóźnień (tzw. \emph{jitter} -- \emph{Sjit}, \emph{Djit}), zostały przeliczone jako wartości średnie z całego czasu trwania sesji.
+	\item Zmienne kategoryczne, takie jak stan połączenia (\emph{state}) czy typ usługi (\emph{service}), przetransformowano za pomocą wyznaczenia wartości najczęstszej w danym oknie czasowym, wyjątkiem były kategorie ataków, które zawsze są zapisywane, nawet jeżeli dominują pakiety normalne.
+\end{itemize}
+Dzięki tej transformacji zredukowano liczbę rekordów, jednocześnie przekształcając dane z formy izolowanych impulsów sieciowych w ciągłe profile behawioralne.
+
+\subsection{Skalowanie nieliniowe, standaryzacja i kodowanie zmiennych}
+
+W kroku czwartym (\texttt{step\_4\_scale\_standardise.py}) rozwiązano problem skrajnej asymetrii rozkładów cech sieciowych. 
+Zmienne takie jak liczba przesłanych bajtów czy czas trwania charakteryzują się skrajnymi wachaniami wartości, co paraliżuje działanie modeli liniowych (np. regresji logistycznej). 
+W celu normalizacji rozkładów zastosowano transformację logarytmiczną typu $\log(x + 1)$:
+\begin{equation}
+	x^* = \ln(x + 1)
+\end{equation}
+Operację tę wykonano dla cech: \emph{sbytes}, \emph{dbytes}, \emph{Sload}, \emph{Dload}, \emph{dur}, \emph{Sjit}, \emph{Djit} oraz opóźnień TCP (\emph{tcprtt}, \emph{synack}, \emph{ackdat}). 
+Pozostałe cechy numeryczne poddano klasycznej standaryzacji przy użyciu algorytmu \texttt{StandardScaler}, sprowadzając ich rozkłady do średniej równej zero oraz odchylenia standardowego równego jeden.
+
+\subsection{Łączenie danych i konwersja cech kategorycznych}
+
+W kroku piątym (\texttt{step\_5\_merge.py}) złączono przetworzone pliki cząstkowe w jeden zbiorczy zbiór danych.
+W początkowym zbiorze dane są podzielone na 4 pliki, z maksymalną wielkością ok. 700 tysiecy rekordów.
+Ich łączna wielkość to około 2,5 miliona punktów danych.
+
+W ostatnim, szóstym kroku (\texttt{step\_6\_category\_encoding.py}) tekstowe cechy kategoryczne (\emph{proto}, \emph{service}, \emph{state}) zostały zakodowane numerycznie z jednoczesnym wyeksportowaniem słowników mapowania do plików formatu JSON. 
+Proces ten został dokonany dopiero po złączeniu plików w celu uniknięcia niespójności w kodowaniu cech w poszczególnych plikach. 
+
+\section{Wyniki eksperymentów i analiza porównawcza dla danych sieciowych}
+
+W celu oceny wpływu zaprojektowanego procesu przetwarzania danych na skuteczność wykrywania anomalii sieciowych, przeprowadzono testy porównawcze na trzech etapach:
+\begin{itemize}
+\item dla danych surowych z dodanymi etykietami
+\item dla danych po oczyszczeniu i naprawie
+\item dla danych zgrupowanych
+\end{itemize}
+We wszystkich przypadkach dane zostały również zgrupowane.
+
+W eksperymentach zestawiono działanie dwóch algorytmów nadzorowanych: klasyfikatora histogramowego wzmacniania gradientu (\emph{HistGradientBoosting}) oraz regresji logistycznej z regularyzacją $L_1$.
+Zastosowany został również jeden algorytm nie-nadzorowany - las izolacyjny.
+
+\subsection{Analiza wyników dla danych surowych}
+
+W pierwszej fazie modele zostały uruchomione na danych surowych, gdzie wejściem były pojedyncze pakiety. 
+Zbiorcze zestawienie uzyskanych metryk klasyfikacji przedstawia tabela~\ref{Tab:WynikiSurowe}.
+
+\begin{table}[ht]
+\caption{Metryki klasyfikacji anomalii dla surowych danych pakietowych}
+\centering		
+	\begin{tabular}{|l|c|c|c|c|}	
+		\hline
+		Algorytm & Precision & Recall & F1-Score & ROC-AUC \\
+		\hline
+		HistGradientBoosting (normalny) & 0,99 & 1,00 & 1,00 & 0,9997 \\
+		HistGradientBoosting (anomalie) & 0,98 & 0,96 & 0,97 & 0,9997 \\
+		Regresja logistyczna (normalny) $L_1$ & 1,00 & 0,99 & 0,99 & 0,9989 \\
+		Regresja logistyczna (anomalie) $L_1$ & 0,93 & 0,97 & 0,95 & 0,9989 \\
+		Las izolacyjny (normalny) & 0,91 & 0,91 & 0,91 &  \\
+		Las izolacyjny (anomalie) & 0,37 & 0,37 & 0,37 & \\
+		\hline
+	\end{tabular}	
+\label{Tab:WynikiSurowe}
+\end{table}
+
+Oba modele nadzorowane osiągnęły na tym etapie bardzo wysokie wskaźniki skuteczności. 
+Takie wyniki wydają się być wyśmienitymi, jednak są one wyjaśniane przez rozkład wag cech algorytmu, porównany w późniejszej części raportu.
+Model lasu izolacyjnego osiągnął niskie wyniki dla wykrywania anomalii i ogólnie niższe wyniki niż algorytmy nadzorowane.
+
+\subsection{Analiza wyników dla danych po oczyszczeniu i naprawie danych}
+
+W drugiej fazie modele zostały uruchomione na danych oczyszczonych i naprawionych przez drugi krok przetwarzania, gdzie wejściem dalej były pojedyncze pakiety. 
+Zbiorcze zestawienie uzyskanych metryk klasyfikacji przedstawia tabela~\ref{Tab:Wyniki2}.
+
+\begin{table}[ht]
+\caption{Metryki klasyfikacji anomalii dla oczyszczonych danych pakietowych}
+\centering		
+	\begin{tabular}{|l|c|c|c|c|}	
+		\hline
+		Algorytm & Precision & Recall & F1-Score & ROC-AUC \\
+		\hline
+		HistGradientBoosting (normalny) & 0,99 & 1,00 & 1,00 & 0,9997 \\
+		HistGradientBoosting (anomalie) & 0,98 & 0,96 & 0,97 & 0,9997 \\
+		Regresja logistyczna (normalny) $L_1$ & 1,00 & 0,99 & 0,99 & 0,9990 \\
+		Regresja logistyczna (anomalie) $L_1$ & 0,93 & 0,97 & 0,95 & 0,9990 \\
+		Las izolacyjny (normalny) & 0,90 & 0,90 & 0,90 &  \\
+		Las izolacyjny (anomalie) & 0,34 & 0,33 & 0,33 & \\
+		\hline
+	\end{tabular}	
+\label{Tab:Wyniki2}
+\end{table}
+
+W przypadku algorytmów nadzorowanych zmiany po naprawieniu danych są niewielkie.
+Ciekawa zależność ukzała się jednak w wypadku lasu izolacyjnego, którego zdolność do poprawnek klasyfikacji pakietów spadła.
+
+\subsection{Analiza wyników dla danych po agregacji sesyjnej}
+
+W trzeciej fazie badania przeprowadzono na danych, które przeszły agregację, jeszcze bez modyfikacji zakresów i skalowania wartości. 
+Metryki dla danych przetworzonych zebrano w tabeli~\ref{Tab:Wyniki3}.
+
+\begin{table}[ht]
+\caption{Metryki klasyfikacji anomalii dla danych zagregowanych}
+\centering		
+	\begin{tabular}{|l|c|c|c|c|}	
+		\hline
+		Algorytm & Precision & Recall & F1-Score & ROC-AUC \\
+		\hline
+		HistGradientBoosting (normalny) & 0,99 & 0,99 & 0,99 & 0,9997 \\
+		HistGradientBoosting (anomalie) & 0,76 & 0,72 & 0,74 & 0,9997 \\
+		Regresja logistyczna (normalny) $L_1$ & 1,00 & 0,98 & 0,99 & 0,9950 \\
+		Regresja logistyczna (anomalie) $L_1$ & 0,67 & 1.00 & 0,90 & 0,9950 \\
+		Las izolacyjny (normalny) & 0,98 & 0,98 & 0,98 &  \\
+		Las izolacyjny (anomalie) & 0,41 & 0,41 & 0,41 & \\
+		\hline
+	\end{tabular}	
+\label{Tab:Wyniki3}
+\end{table}
+
+Agregacja sesyjna diametralnie zmienia wyniki otrzymane przez wszystkie modele.
+Algorytmy nadzorowane doświadczają tu znacznego spadku dokładności wykrywania podejrzanych zachowań.
+Las izolacyjny, odwrotnie, zwiększa swoją efektywność, choć jest ona wciąż poniżej poziomu innych algorytmów.
+
+\subsection{Analiza wyników dla danych po wszystkich krokach}
+
+W czwartej fazie badania przeprowadzono na danych, które przeszły pełną ścieżkę przetwarzania (zamiana pakietów na sesje w kroku 3, logarytmowanie cech wielkościowych w kroku 4 oraz kodowanie zmiennych). 
+Metryki dla danych przetworzonych zebrano w tabeli~\ref{Tab:Wyniki4}.
+
+\begin{table}[ht]
+\caption{Metryki klasyfikacji anomalii dla danych po wszystkich transformacjach}
+\centering		
+	\begin{tabular}{|l|c|c|c|c|}	
+		\hline
+		Algorytm & Precision & Recall & F1-Score & ROC-AUC \\
+		\hline
+		HistGradientBoosting (normalny) & 0,99 & 0,99 & 0,99 & 0,9955 \\
+		HistGradientBoosting (anomalie) & 0,76 & 0,72 & 0,74 & 0,9955 \\
+		Regresja logistyczna (normalny) $L_1$ & 1,00 & 0,98 & 0,99 & 0,9938 \\
+		Regresja logistyczna (anomalie) $L_1$ & 0,68 & 1.00 & 0,81 & 0,9938 \\
+		Las izolacyjny (normalny) & 0,98 & 0,98 & 0,98 & \\
+		Las izolacyjny (anomalie) & 0,33 & 0,33 & 0,33 & \\
+		\hline
+	\end{tabular}	
+\label{Tab:Wyniki4}
+\end{table}
+
+Po wykonaniu skalowania i standaryzacji wyniki zmieniają się głownie dla lasu izolacyjnego, którego efektywność znacznie spadła.
+Algorytmy nadzorowane doświadczają niedużych różnic, co sugeruje niewielki wpływ tego działania.
+
+\section{Wpływ transformacji na dane algorytmy w przypadku danych sieciowych}
+
+\subsection{Histogramowe wzmacnianie gradientu}
+
+\subsubsection{Macierze pomyłek}
+
+W tabeli \ref{tab:cm_histgradient} przedstawione zostały macierze pomyłek dla poszczególnych przeliczeń algorytmu histogramowego wzmacniania gradientu.
+Widać na nich niewielki wpływ przejść między 1, a 2 oraz 3, a 4 rodzajami danych.
+
+W pierwszym przypadku spadła w w niewielkim stopniu iość klasyfikacji fałszywie pozytywnych, a bardziej wzrosła ilość fałszywych negatywów.
+Trzeba tu zauważyć, że w wyniku usunięcia rekordów błędnych spadła ilość danych, więc tym samym ogólna wydajność klasyfikacji nie wzrosła.
+
+W wypadku standaryzacji i skalowania danych doszło do minimalnej zmiany fałszywych pozytywów, przy spadku fałszywych negatywów.
+Tu ilość rekordów pozostała taka sama.
+
+Największa zmiana wydarzyła się przy agregacji danych, w którym to przypadku nastąpiła duża zmiana ich struktury.
+Ilość rekordów zmniejszyła się, jednak niepoprawne klasyfikacje wzrosły ilościowo.
+Oznacza to że po takich transformacjach model gorzej klasyfikuje dane.
+
+\begin{table}[ht]
+\caption{Macierze pomyłek dla klasyfikatora HistGradientBoosting}
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|l|c|}
+\hline
+\textbf{Rodzaj danych} & \textbf{Macierz pomyłek} \\
+\hline
+1. Dane surowe & $\begin{pmatrix} 663787 & 1843 \\ 3457 & 92928 \end{pmatrix}$ \\
+\hline
+2. Dane oczyszczone & $\begin{pmatrix} 626487 & 1828 \\ 3566 & 91655 \end{pmatrix}$ \\
+\hline
+3. Dane zgrupowane& $\begin{pmatrix} 532757 & 4597 \\ 5651 & 14314 \end{pmatrix}$ \\
+\hline
+4. Dane przetworzone & $\begin{pmatrix} 532751 & 4603 \\ 5526 & 14439 \end{pmatrix}$ \\
+\hline
+\end{tabular}
+\label{tab:cm_histgradient}
+\end{table}
+
+\subsubsection{Porównanie wag cech}
+
+Przy obliczeniach algorytmu uzyskana została lista wag przypisanych danym cechom ze zbioru danych.
+Jest to bardzo ważna informacja, ponieważ pokazuje ona, które dane są uwzględniane najbardziej przy podejmowaniu decyzji o klasyfikacji.
+Ich wartości dla kolejnych wersji modelu zostały przedstawione w tabeli \ref{tab:feature_importances_comparison};
+Zawarte w tych listach dane zapewniają ważny dla oceny rzeczywistej oceny klasyfikatora kontekst.
+Cecha \texttt{sttl}, oznaczająca wartość TTL pakietu od źródła do celu, stanowi bardzo silną sygnaturę syntetyczności danych o atakach.
+W bardzo dużej części rekordów reprezentujących ataki wartość ta jest ustawiona na 255.
+Model przypisał jej więc bardzo wysoką wagę, ograniczając wpływ innych cech, powodując tzw. \texttt{overfitting}.
+Po zgrupowaniu, mimo pozostawieniu maksymalnej wartości tej cechy w ramach grupy, jej waga spadła znacząco.
+Większą część ogółu branych pod uwagę cech zaczęły stanowić cechy niepowiązane.
+Oznacza to, że mimo spadku poprawności klasyfikacji, modele oparte a dane zagregowane klasyfikują w o wiele większym stopniu w oparciu o parametry behawieralne sesji, zamiast łatwych do podmiany sygnatur. 
+
+\begin{table}[htbp]
+\caption{Porównanie wartości ważności cech (Feature Importances) dla klasyfikatora HistGradientBoosting dla czterech zestawów danych}
+\centering
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+\textbf{Nazwa cechy} & \textbf{1. Surowe} & \textbf{2. Oczyszczone} & \textbf{3. Zgrupowane} & \textbf{4. Pełne} \\
+\hline
+\texttt{sttl} & 0,1362 & 0,1549 & 0,0546 & 0,0531 \\
+\texttt{ct\_state\_ttl} & 0,0092 & 0,0107 & 0,0010 & 0,0016 \\
+\texttt{dsport} & 0,0043 & 0,0040 & 0,0020 & 0,0021 \\
+\texttt{service} & 0,0020 & 0,0017 & 0,0004 & 0,0004 \\
+\texttt{dbytes} & 0,0017 & 0,0018 & 0,0000 & 0,0001 \\
+\texttt{sport} & 0,0010 & 0,0012 & 0,0003 & 0,0003 \\
+\texttt{ct\_srv\_dst} & 0,0009 & 0,0008 & 0,0014 & 0,0016 \\
+\texttt{smeansz} & 0,0007 & 0,0008 & 0,0006 & 0,0005 \\
+\texttt{sbytes} & 0,0005 & 0,0007 & 0,0001 & 0,0002 \\
+\texttt{synack} & 0,0005 & 0,0005 & 0,0000 & 0,0000 \\
+\texttt{proto} & 0,0005 & 0,0007 & 0,0000 & 0,0000 \\
+\texttt{ct\_srv\_src} & 0,0005 & 0,0006 & 0,0005 & 0,0005 \\
+\texttt{state} & 0,0004 & 0,0002 & 0,0002 & 0,0006 \\
+\texttt{Dload} & 0,0004 & 0,0003 & 0,0000 & 0,0000 \\
+\texttt{dmeansz} & 0,0004 & 0,0006 & 0,0003 & 0,0002 \\
+\texttt{dloss} & 0,0003 & 0,0002 & 0,0000 & 0,0000 \\
+\texttt{ct\_flw\_http\_mthd} & 0,0003 & 0,0000 & 0,0000 & 0,0000 \\
+\texttt{ct\_dst\_src\_ltm} & 0,0002 & 0,0004 & 0,0001 & 0,0001 \\
+\texttt{dur} & 0,0002 & 0,0006 & 0,0000 & 0,0001 \\
+\texttt{Sload} & 0,0002 & 0,0000 & 0,0002 & 0,0000 \\
+\texttt{ct\_dst\_sport\_ltm} & 0,0002 & 0,0002 & 0,0000 & 0,0000 \\
+\texttt{Dpkts} & 0,0002 & 0,0001 & 0,0000 & 0,0000 \\
+\texttt{ct\_src\_ltm} & 0,0001 & 0,0001 & 0,0000 & 0,0000 \\
+\texttt{Dintpkt} & 0,0001 & 0,0001 & 0,0001 & 0,0001 \\
+\texttt{ct\_src\_dport\_ltm} & 0,0001 & 0,0001 & 0,0000 & 0,0000 \\
+\texttt{Djit} & 0,0001 & 0,0001 & 0,0000 & 0,0001 \\
+\texttt{ct\_dst\_ltm} & 0,0001 & 0,0001 & 0,0001 & 0,0000 \\
+\texttt{dtcpb} & 0,0001 & 0,0001 & 0,0000 & 0,0000 \\
+\texttt{Spkts} & 0,0001 & 0,0000 & 0,0000 & 0,0000 \\
+\texttt{Sintpkt} & 0,0001 & 0,0000 & 0,0000 & 0,0000 \\
+\texttt{sloss} & 0,0001 & 0,0000 & 0,0000 & 0,0000 \\
+\texttt{res\_bdy\_len} & 0,0000 & 0,0000 & 0,0000 & 0,0001 \\
+\texttt{Sjit} & 0,0000 & 0,0001 & 0,0000 & 0,0000 \\
+\texttt{stcpb} & 0,0000 & 0,0000 & 0,0000 & 0,0000 \\
+\texttt{is\_ftp\_login} & 0,0000 & 0,0000 & 0,0000 & 0,0000 \\
+\texttt{ct\_ftp\_cmd} & 0,0000 & 0,0000 & 0,0000 & 0,0000 \\
+\hline
+\multicolumn{5}{|c|}{\textit{Cechy wprowadzone / ujawnione wyłącznie w późniejszych krokach}} \\
+\hline
+\texttt{tcprtt} & - & 0,0001 & 0,0000 & 0,0000 \\
+\texttt{trans\_depth} & - & 0,0000 & 0,0000 & 0,0000 \\
+\texttt{dttl} & - & 0,0000 & 0,0000 & 0,0000 \\
+\texttt{swin} & - & - & - & 0,0000 \\
+\texttt{dwin} & - & - & - & 0,0000 \\
+\hline
+\end{tabular}
+\label{tab:feature_importances_comparison}
+\end{table}
+
+\subsection{Regresja Logistyczna $L_1$}
+
+\subsubsection{Macierze pomyłek}
+
+W tabeli \ref{tab:cm_logistic_regression} przedstawione zostały macierze pomyłek dla poszczególnych przeliczeń algorytmu regresji logistycznej z regularyzacją $L_1$. 
+Podobnie jak w przypadku klasyfikatora histogramowego, widoczny jest minimalny wpływ czyszczenia oraz standaryzacji danych na ostateczną strukturę błędów, przy jednoczesnym drastycznym przemodelowaniu wyników po zastosowaniu agregacji potoku sesyjnego.
+
+Wdrażając grupowanie danych, zaobserwować można skokowy wzrost liczby poprawnie wykrytych anomalii przy jednoczesnym wzroście fałszywych pozytywów. 
+Świadczy to o silnym wpływie parametru zbalansowania wag klas (\texttt{class\_weight='balanced'}), który zmusił model do kategoryzacji większości niejednoznacznych sesji jako potencjalnych ataków, minimalizując krytyczny z punktu widzenia bezpieczeństwa współczynnik fałszywych negatywów (FN spadające do poziomu kilkudziesięciu rekordów).
+
+\begin{table}[ht]
+\caption{Macierze pomyłek dla klasyfikatora Regresji Logistycznej $L_1$}
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|l|c|}
+\hline
+\textbf{Rodzaj danych} & \textbf{Macierz pomyłek} \\
+\hline
+1. Dane surowe & $\begin{pmatrix} 658435 & 7195 \\ 2827 & 93558 \end{pmatrix}$ \\
+\hline
+2. Dane oczyszczone & $\begin{pmatrix} 621368 & 6947 \\ 2869 & 92352 \end{pmatrix}$ \\
+\hline
+3. Dane zgrupowane & $\begin{pmatrix} 527677 & 9677 \\ 64 & 19901 \end{pmatrix}$ \\
+\hline
+4. Dane przetworzone & $\begin{pmatrix} 528008 & 9346 \\ 80 & 19885 \end{pmatrix}$ \\
+\hline
+\end{tabular}
+\label{tab:cm_logistic_regression}
+\end{table}
+
+\subsubsection{Porównanie współczynników wagowych cech}
+
+W przypadku regresji logistycznej znaczenie danych wejściowych interpretowane jest bezpośrednio poprzez bezwzględne wartości współczynników wagowych (kontrybucji w zmianę logarytmu szans) przypisanych poszczególnym zmiennym w procesie optymalizacji. 
+Dla cech kategorycznych poddanych kodowaniu zero-jedynkowemu, takich jak \texttt{proto}, \texttt{state} czy \texttt{service}, w tabeli \ref{tab:feature_weights_regression} zaprezentowano maksymalną bezwzględną wartość współczynnika spośród wszystkich wygenerowanych podklas.
+
+Tak jak w przypadku histogramowego wzmacniania gradientu, zgrupowanie zwiększa udział innych cech sesji, realnie poprawniając efektywność modelu.
+Świadczy o tym również bardzo mała ilość fałszywych negatywów.
+
+\begin{table}[htbp]
+\caption{Porównanie bezwzględnych wartości wag cech dla klasyfikatora Regresji Logistycznej $L_1$ (Lasso)}
+\centering
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+\textbf{Nazwa cechy} & \textbf{1. Surowe} & \textbf{2. Oczyszczone} & \textbf{3. Zgrupowane} & \textbf{4. Pełne} \\
+\hline
+\texttt{sttl} & 1,0423 & 1,1382 & 0,4032 & 0,3486 \\
+\texttt{ct\_state\_ttl} & 1,8838 & 1,8810 & 0,2531 & 0,1614 \\
+\texttt{dsport} & 0,0086 & 0,0015 & 0,0403 & 0,1170 \\
+\texttt{service} & 0,5779 & 0,6176 & 0,3492 & 0,4043 \\
+\texttt{dbytes} & 0,0719 & 0,0810 & 0,0295 & 0,1332 \\
+\texttt{sport} & 1,1301 & 1,1493 & 0,6691 & 0,7264 \\
+\texttt{ct\_srv\_dst} & 0,1766 & 0,1696 & 0,2112 & 0,2047 \\
+\texttt{smeansz} & 0,1086 & 0,0951 & 0,0217 & 0,1141 \\
+\texttt{sbytes} & 0,1350 & 0,1411 & 0,0770 & 0,2565 \\
+\texttt{synack} & 0,3105 & 0,3174 & 0,2314 & 0,3736 \\
+\texttt{proto} & 0,4467 & 0,4478 & 0,3894 & 0,3406 \\
+\texttt{ct\_srv\_src} & 0,1805 & 0,1654 & 0,1178 & 0,1107 \\
+\texttt{state} & 0,7932 & 0,7955 & 0,5322 & 0,7556 \\
+\texttt{Dload} & 0,1677 & 0,2110 & 0,0535 & 0,1801 \\
+\texttt{dmeansz} & 0,6613 & 0,7076 & 0,4771 & 0,2562 \\
+\texttt{dloss} & 0,0096 & 0,0090 & 0,0058 & 0,0187 \\
+\texttt{ct\_flw\_http\_mthd} & 0,0247 & 0,0254 & 0,0230 & 0,0351 \\
+\texttt{ct\_dst\_src\_ltm} & 0,1406 & 0,1573 & 0,0652 & 0,0457 \\
+\texttt{dur} & 0,0099 & 0,0137 & 0,0446 & 0,2642 \\
+\texttt{Sload} & 0,0525 & 0,0520 & 0,0194 & 0,0210 \\
+\texttt{ct\_dst\_sport\_ltm} & 0,1508 & 0,1615 & 0,2224 & 0,1736 \\
+\texttt{Dpkts} & 0,0208 & 0,0214 & 0,0179 & 0,0270 \\
+\texttt{ct\_src\_ltm} & 0,0933 & 0,0903 & 0,0416 & 0,0459 \\
+\texttt{Dintpkt} & 0,0050 & 0,0332 & 0,0648 & 0,3251 \\
+\texttt{ct\_src\_dport\_ltm} & 0,0195 & 0,0176 & 0,0993 & 0,0789 \\
+\texttt{Djit} & 0,0388 & 0,0369 & 0,0360 & 0,0314 \\
+\texttt{ct\_dst\_ltm} & 0,0171 & 0,0160 & 0,0053 & 0,0269 \\
+\texttt{dtcpb} & 0,0439 & 0,0386 & 0,0550 & 0,0191 \\
+\texttt{Spkts} & 0,0176 & 0,0340 & 0,0705 & 0,0917 \\
+\texttt{Sintpkt} & 0,0112 & 0,0707 & 0,0369 & 0,0199 \\
+\texttt{sloss} & 0,2479 & 0,2673 & 0,1513 & 0,1391 \\
+\texttt{res\_bdy\_len} & 0,0763 & 0,0698 & 0,0144 & 0,2602 \\
+\texttt{Sjit} & 0,0237 & 0,0234 & 0,0234 & 0,1629 \\
+\texttt{stcpb} & 0,0487 & 0,0520 & 0,0578 & 0,0252 \\
+\texttt{is\_ftp\_login} & 0,1859 & 0,2503 & 0,1304 & 0,0911 \\
+\texttt{ct\_ftp\_cmd} & 0,0441 & 0,0542 & 0,0491 & 0,1003 \\
+\hline
+\multicolumn{5}{|c|}{\textit{Cechy wprowadzone / ujawnione wyłącznie w późniejszych krokach}} \\
+\hline
+\texttt{tcprtt} & 0,1676 & 0,1683 & 0,1254 & 0,1107 \\
+\texttt{trans\_depth} & 0,1669 & 0,1826 & 0,0790 & 0,1366 \\
+\texttt{dttl} & 0,8127 & 0,7909 & 1,5971 & 1,9488 \\
+\texttt{swin} & 0,3371 & 0,3363 & 0,3607 & 0,3131 \\
+\texttt{dwin} & 0,1997 & 0,1927 & 0,2907 & 0,2212 \\
+\hline
+\end{tabular}
+\label{tab:feature_weights_regression}
+\end{table}
+
+\subsection{Las Izolacyjny}
+
+\subsubsection{Macierze pomyłek}
+
+W tabeli \ref{tab:cm_isolation_forest} zestawione zostały macierze pomyłek dla algorytmu Lasu Izolacyjnego na czterech etapach przetwarzania danych. 
+Ze względu na nienadzorowany charakter tego klasyfikatora, kluczowym czynnikiem konfiguracji było jawne zdefiniowanie parametru zanieczyszczenia (\emph{contamination}), określającego spodziewany odsetek anomalii w analizowanym zbiorze danych.
+
+\begin{table}[ht]
+\caption{Macierze pomyłek dla klasyfikatora Isolation Forest}
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|l|c|}
+\hline
+\textbf{Rodzaj danych} & \textbf{Macierz pomyłek} \\
+\hline
+1. Dane surowe & $\begin{pmatrix} 2015438 & 203326 \\ 203351 & 117932 \end{pmatrix}$ \\
+\hline
+2. Dane oczyszczone & $\begin{pmatrix} 1893107 & 201277 \\ 213636 & 103766 \end{pmatrix}$ \\
+\hline
+3. Dane zgrupowane & $\begin{pmatrix} 1751802 & 39377 \\ 39383 & 27167 \end{pmatrix}$ \\
+\hline
+4. Dane przetworzone & $\begin{pmatrix} 1746621 & 44558 \\ 44564 & 21986 \end{pmatrix}$ \\
+\hline
+\end{tabular}
+\label{tab:cm_isolation_forest}
+\end{table}
+
+\subsubsection{Analiza zachowania modelu nienadzorowanego}
+
+W odróżnieniu od nadzorowanych modeli drzewiastych i liniowych, Isolation Forest izoluje anomalie w oparciu o ich odrębność topologiczną w przestrzeni cech, a nie na podstawie dostarczonych etykiet klas. 
+Analiza macierzy pomyłek ujawnia specyficzną symetrię błędów – liczba fałszywych alarmów na każdym z etapów jest niemal identyczna jak liczba niezidentyfikowanych ataków. 
+Wynika to bezpośrednio z matematycznej konstrukcji algorytmu: model odcina dokładnie taki ułamek próbki jako anomalie, jaki zdefiniowano w parametrze \texttt{contamination}, co przy niedoskonałej separacji klas skutkuje równomiernym rozkładem pomyłek w obie strony.
+
+Wprowadzenie agregacji sesyjnej zaowocowało drastycznym spadkiem bezwzględnej liczby błędów obu typów oraz wzrostem ogólnej dokładności (\emph{accuracy}) do poziomu 0,96. 
+Wynika to ze zmniejszenia gęstości szumu informacyjnego – pojedyncze, surowe pakiety w sieci wykazują ogromną zmienność losową, przez co algorytm nienadzorowany błędnie izolował poprawne pakiety o nietypowym rozmiarze. 
+Złączenie ruchu do postaci sesji nadało danym bardziej wyrazistą i zwartą strukturę geometryczną.
+
+Niezwykle interesujące jest pogorszenie wyników klasyfikacji po zastosowaniu pre-processingu, standaryzacji i kodowania \emph{one-hot} (etap 4), gdzie liczba poprawnie wykrytych ataków spadła z 27167 do 21986. 
+Zjawisko to wynika ze specyfiki działania Lasu Izolacyjnego. 
+Przeprowadzone skalowanie (\emph{StandardScaler} lub \emph{MinMaxScaler}) wyrównało wariancję poszczególnych cech i sprowadziło je do wspólnej skali geometrycznej. 
+Spowodowało to, że cechy silnie skorelowane z atakami przestały dominować swoją pierwotną, dużą wartością, a zakodowane zmienne kategorialne sztucznie zagęściły przestrzeń decyzyjną. 
+Dla algorytmu szukającego "odizolowanych punktów" transformacja ta realnie utrudniła budowanie losowych podziałów i doprowadziła do częściowego "ukrycia" anomalii pośród ruchu prawidłowego. 
+Dowodzi to, że nienadzorowane metody metryczne i podziału przestrzeni często funkcjonują efektywniej na danych nieskalowanych, zachowujących naturalne dla danej domeny proporcje odległości.
+
+\subsection{Porównanie modeli}
+
+Zestawienie wyników klasyfikacji oraz ewolucji struktur decyzyjnych dla modeli Histogramowego Wzmacniania Gradientu, Regresji Logistycznej $L_1$ oraz Lasu Izolacyjnego ujawnia fundamentalne różnice w ich matematycznej wrażliwości na transformacje potoku danych.
+Każdy z analizowanych algorytmów reprezentuje odmienne podejście, co przełożyło się na skrajnie różne reakcje na czyszczenie, agregację oraz standaryzację danych.
+
+Na etapach analizy pakietowej (etap 1 i 2), modele nadzorowane (Histogramowe Wzmacnianie Gradientu i Regresja Logistyczna) wykazały silną tendencję do tzw. \emph{overfittingu} (nadmiernego dopasowania) do laboratoryjnych artefaktów środowiska testowego. 
+Zjawisko to objawiło się poprzez przypisanie dominujących wag i współczynników zmiennym statycznym, takim jak port źródłowy \texttt{sport} (waga 1,14 w regresji) oraz nagłówkom \texttt{sttl} i \texttt{ct\_state\_ttl}. 
+Z punktu widzenia inżynierii bezpieczeństwa sieciowego oznacza to, że klasyfikatory zamiast identyfikować behawioralne wzorce anomalii, nauczyły się rozpoznawać sygnatury konkretnych systemów operacyjnych maszyn generujących ruch w środowisku testowym. 
+W tym samym czasie nienadzorowany Las Izolacyjny na danych surowych zmagał się z ogromnym szumem informacyjnym. Wysoka różnorodność pojedynczych pakietów uniemożliwiła precyzyjne odizolowanie punktów, generując duży współczynnik fałszywych alarmów przy niskiej czułości wykrywania rzeczywistych ataków.
+
+Przełomowym krokiem metodologicznym okazała się agregacja danych do postaci dwukierunkowych sesji sieciowych (etap 3). Przekształcenie to wymusiło geometryczną reorganizację przestrzeni cech:
+\begin{itemize}
+    \item W modelu \textbf{Histogramowego Wzmacniania Gradientu} nastąpiła decentralizacja procesu decyzyjnego – waga zmiennej \texttt{sttl} spadła trzykrotnie (z 0,15 na 0,05), uwalniając masę decyzyjną na rzecz innych cech strukturalnych. 
+    Mimo pewnego wzrostu błędów, model zyskał odporność na potencjalne zmiany w syganturach nagłówków.
+    \item W \textbf{Regresji Logistycznej} mechanizm regularyzacji $L_1$ (Lasso) zareagował drastycznym zmniejszeniem znaczenia \texttt{ct\_state\_ttl} na rzecz cechy \texttt{dttl} (skok współczynnika do 1,59). 
+    Zastosowanie zbalansowanych wag klas (\texttt{class\_weight='balanced'}) zminimalizowało liczbę fałszywych negatywów do krytycznie niskiego poziomu (jedynie 64 przeoczone ataki), kosztem akceptowalnego wzrostu fałszywych alarmów.
+    \item Dla \textbf{Lasu Izolacyjnego} konsolidacja ruchu do formy sesji ujednoliciła strukturę geometryczną danych poprawnych. 
+    Spowodowało to skokowy wzrost ogólnej dokładności (\emph{accuracy} do 0,96) oraz redukcję błędów obu typów o ponad 80\%, co potwierdza, że nienadzorowane metody podziału przestrzeni wymagają danych opartych o większe zgrupowane zestawy, zamiast pojedynczych punktów.
+\end{itemize}
+
+Ostatni etap przetwarzania – pre-processing obejmujący standaryzację, skalowanie oraz pełne kodowanie kategorialne (etap 4) zróżnicował ponowie analizowane algorytmy. 
+Dla nieliniowego modelu Histogramowego Wzmacniania Gradientu krok ten okazał się neutralny, drzewa decyzyjne z natury posiadają znaczną odporność na zmiany skali wartości.
+Silny efekt odnotowano natomiast w regresji logistycznej: ujednolicenie wariancji znacznie zwiększyły udział cech reprezentujących dynamikę zachowania w sesji.
+Cechy określające dynamikę czasową i wolumenową sesji, takie jak \texttt{Dintpkt} (wzrost z 0,06 na 0,32) czy \texttt{dur} (wzrost z 0,04 na 0,26), zyskały kluczowy wpływ na ostateczny klasyfikator. 
+
+Zupełnie odwrotny, negatywny skutek standaryzacji zaobserwowano w przypadku Lasu Izolacyjnego, gdzie liczba poprawnie wykrytych anomalii spadła z 27167 do 21986 dla analizowanego przypadku. 
+Przeskalowanie danych zniwelowało naturalne dysproporcje odległości i sztucznie zagęściło wielowymiarową przestrzeń, utrudniając algorytmowi losową izolację unikalnych ścieżek drzew.
+
+Podsumowując, optymalnym wyborem dla systemów detekcji intruzów (IDS) pracujących na danych zagregowanych pozostaje nieliniowy model \textbf{Histogramowego Wzmocnienia Gradientu}, ze względu na stabilność, brak podatności na brak skalowania oraz zrównoważony profil cech. 
+\textbf{Regresja Logistyczna} po pre-processingu stanowi dla niego wysoce wydajną, przewidywalną alternatywę skupioną na wykrywaniu ataków, kosztem większej ilości fałszywych pozytywów. 
+
+Z kolei \textbf{Las Izolacyjny}, jako jedyny model nienadzorowany, posiada pewien potencjał dla danych zogranizowanych w sesje.
+Mógłby być to dobry wybór dla wykrywania anomalii w dłuższych sesji, zamiast w czasie rzeczywistym.
+
+\subsubsection{Podsumowanie i wnioski końcowe}
+
+% czujniki
+
+% ruch sieciowy
+
+W przypadku danych o ruchu sieciowym rzeprowadzone eksperymenty z użyciem trzech różnorodnych algorytmów uczenia maszynowego pozwoliły wyciągnięcie pewnych obserwacji.
+Zastosowanie wielu prób w różnych etapach transformacji pozwoliło ustalić sytuacje w których najlepiej funkcjonują dane podejścia:
+
+\begin{enumerate}
+    \item \textbf{Rola grupowania danych:} Przejście z analizy pojedynczych pakietów do analizy dwukierunkowych sesji sieciowych okazało się najważniejszym czynnikiem eliminującym zjawisko przeuczenia (\emph{overfitting}) do sztucznego środowiska laboratoryjnego.
+    Konsolidacja ruchu pozwoliła wszystkim modelom na rezygnację z użycia, niestabilnych w rzeczywistym świecie, sygnatur sprzętowych (np. \texttt{sport}, \texttt{ct\_state\_ttl}) na rzecz bardziej użytecznych cech strukturalnych.
+    \item \textbf{Skalowanie i standaryzacja:} Badania dowiodły, że transformacje wartości danych (skalowanie, standaryzacja wariancji) nie są zawsze dobrym wyborem i ich stosowanie musi być ściśle dopasowane do natury matematycznej algorytmu. 
+    O ile dla modelu \textbf{Histogramowego Wzmacniania Gradientowego} zmiany te nie zmieniały w dużym stopniu wyniku, o tyle dla \textbf{Regresji Logistycznej} stanowił warunek konieczny do prawidłowego ukształtowania liniowej hiperpłaszczyzny rozdzielającej. 
+    Z kolei dla \textbf{Lasu Izolacyjnego} zabieg ten okazał się destrukcyjny, sztucznie zagęszczając przestrzeń i utrudniając izolację anomalii.
+    \item \textbf{Przewaga modeli nadzorowanych:} Choć autonomiczne podejście Lasu Izolacyjnego wykazało wysoką skuteczność na danych sesyjnych bez dostępu do etykiet klas, to modele nadzorowane zapewniają znacznie większą stabilność i precyzję. 
+    W szczególności model \textbf{HistGradientBoosting} charakteryzował się najwyższą odpornością na szum informacyjny, natomiast \textbf{Regresja Logistyczna $L_1$} z mechanizmem bilansowania klas pozwoliła na niemal całkowitą eliminację fałszywych negatywów.
+\end{enumerate}
+
+Ostatecznie, uzyskane wyniki potwierdzają sugerują, że kluczem do skutecznej detekcji intruzów w systemach sieciowych jest nie tylko sam wybór wysoce nieliniowego klasyfikatora, ale przede wszystkim odpowiednia architektura potoku przetwarzania danych (\emph{data pipeline}), która przekształca surowy, chaotyczny strumień pakietów w uporządkowaną strukturę sesyjno-behawioralną.
+
+
+
+
+
+\clearpage
+
+\addcontentsline{toc}{section}{Literatura}
+
+\begin{thebibliography}{4}
+\bibitem{bib:datasetsieciowy} https://www.kaggle.com/datasets/mrwellsdavid/unsw-nb15/data?select=UNSW\_NB15\_testing-set.csv. Dostęp 31.05.2026.
+\end{thebibliography}
+
+\clearpage
+
+\makesummary
+
+\end{document} 
