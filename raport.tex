@@ -1,6 +1,7 @@
 \documentclass[12pt,twoside]{article}
 
 \usepackage{weiiszablon}
+\usepackage{booktabs}
 
 \author{Tomasz Siedlecki, Szymon Jabłoński}
 
@@ -20,16 +21,28 @@
 \newcommand{\rodzajPracyNo}{0}
 
 
-%%% promotor
 \supervisor{dr inż. Mariusz Bolanowski}
 
 \supervisorEN{Mariusz Bolanowski, PhD}
 
-\abstract{Treść streszczenia po polsku}
-\abstractEN{Treść streszczenia po angielsku}
+\abstract{
+Raport opisuje prace poczynione w celu porównania metod automatycznego preprocesowania danych z czujników IoE i logów ruchu sieciowego.
+Został podzielony na dwie części, dotyczące poszczególnych rodzajów danych.
+Fragmenty związane z danymi z czujników skupiają się na detekcji anomalii z użyciem metod matematycznych. i statystycznych
+Zaś część dotycząca informacji o ruchu sieciowym bada sposoby przygotowania danych i ich wpływ na wyniki klasyfikacji ruchu standardowego i złośliwego przez różnorodne modele uczenia maszynowego.
+Na tej podstawie wysunięte zostały wnioski o najlepszych zastosowaniach dla danych metod przetwarzania.
+}
 
-\keywords{max. 5 słów kluczowych w 2 wierszach, oddzielanych przecinkami}
-\keywordsEN{max. five keywords in English}
+\abstractEN{
+This report describes efforts done in order to compare methods for preprocessing of data originating from IoE sensors and network traffic logs.
+It is divided into two distinct parts, each pertaining to one of the data sources.
+Fragments connected to sensors focus on detecting anomalies using mathematical and statistical methods.
+Meanwhile the part touching network traffic data studies the methods for preparing such data and their impact on classification of standard and malicious traffic by diverse machine learning models.
+Based on that conclusions are made as to the best scenarios for use of given processing methods.
+}
+
+\keywords{IoE, czujniki, logi, python}
+\keywordsEN{IoE, sensors, logs, python}
 
 
 \begin{document}
@@ -54,13 +67,22 @@ Efektywność tych modeli jest jednak bezpośrednio uzależniona od zapewnionych
 Surowe dane, pochodzące bezpośrednio z sensorów, czy też logów sieciowych, często zawierają w sobie rekordy z anomaliami pomiarowymi, brakującymi wartościami, czy też o niskiej użyteczności bez połączenia z szerszym kontekstem ich powstania.
 W związku z tym krytycznego znaczenia nabiera wieloetapowy proces przetwarzania (ang. \emph{data preprocessing pipeline}), którego zadaniem jest transformacja surowych danych do postaci kompletnej i przystosowanej do przetwarzania przez modele.
 
-Niniejsze opracowanie stanowi raport z projektu, mającego za cel zglębienie technik przetwarzania danych w celu poprawnienia rezultatów detekcji anomalii.
-Dotyczy on zarówno danych uzyskanych z czujników \texttt{IoE}, jak i zapisów ruchu sieciowego.
+Celem pracy jest opracowanie i porównanie metod preprocessingu danych pomiarowych oraz przedstawienie ich działania w sposób zgodny z literaturą dotyczącą szeregów czasowych i danych sensorowych.
 
-% część o czujnikach
+\subsection{Czujniki IoE}
 
-% część o ruchu sieciowym
-W części projektu dotyczącej danych z ruchu sieciowego użyty został zestaw danych \emph{UNSW\_NB15} \cite{bib:datasetsieciowy}.
+Dane pomiarowe pochodzące z czujników rzadko są gotowe do bezpośredniej analizy. 
+W praktyce pojawiają się w nich braki, krótkotrwałe zakłócenia, nietypowe skoki, dryft pomiarowy oraz wartości odstające. 
+Problem ten jest szczególnie widoczny w szeregach czasowych o wysokiej częstotliwości próbkowania, gdzie pojedynczy błąd czujnika może wpływać na późniejszą analizę trendu lub ocenę stanu systemu \cite{bib:ioe1}.
+Preprocessing jest etapem, który przekształca dane surowe w dane lepiej nadające się do interpretacji, wizualizacji lub dalszego modelowania. 
+W literaturze podkreśla się, że preprocessing obejmuje między innymi uzupełnianie braków, normalizację, wygładzanie, wykrywanie outlierów oraz łączenie danych z wielu źródeł \cite{bib:ioe2}.
+W niniejszym raporcie skupiono się na pięciu metodach, które są proste do interpretacji i często stosowane w pracy z danymi sensorowymi.
+Analiza ma charakter praktyczny: każda metoda została zastosowana do tych samych dwóch zmiennych, temperatury i wilgotności. 
+Dzięki temu można porównać, jak poszczególne podejścia wpływają na liczbę braków danych, rozrzut wartości, kształt wykresu oraz liczbę wykrytych obserwacji odstających.
+
+\subsection{Ruch sieciowy}
+
+W części projektu dotyczącej danych z ruchu sieciowego użyty został zestaw danych \emph{UNSW\_NB15}~\cite{bib:datasetsieciowy}.
 Jest to zbiór powstały w Australijskim Centrum dla Cyberbezpieczeństwa (ACCS), stanowi on hybrydowy zbiór zawierający normalny ruch sieciowy, zmieszany z syntetycznymi zachowaniami odwzorowującymi ataki.
 Główny punkt ciężkości badań ulokowano w analizie wpływu poszczególnych etapów przygotowania danych na ostateczną architekturę matematyczną modeli uczenia maszynowego. 
 Laboratoryjne zestawy danych mają tendencję do monopolizowania uwagi klasyfikatorów przez statyczne zmienne nagłówkowe (takie jak unikalne sygnatury systemów operacyjnych czy sztucznie powtarzalne liczniki pakietów), co w warunkach rzeczywistych prowadzi do całkowitej ślepoty algorytmów. 
@@ -71,7 +93,1043 @@ Badania przeprowadzono eksperymentalnie na różnych etapach zaawansowania potok
 Pozwoliło to na matematyczną ocenę, jak operacje takie jak agregacja sesyjna, uzupełnianie braków czy standaryzacja cech wpływają na stabilność wag modeli liniowych oraz na rozkład struktur decyzyjnych w modelach drzewiastych. 
 Za pomocą analizy ważności cech (zarówno metodą permutacji, jak i eliminacji cech Lasso) udowodniono, że prawidłowo zaprojektowany preprocesing wymusza na algorytmach porzucenie statycznych skrótów na rzecz analizy rzeczywistych paramertów sesji.
 
-\section{Architektura potoku przetwarzania danych sieciowych}
+\newpage
+
+\section{Charakterystyka danych IoE}
+
+Zbiór zawiera 1367 rekordów pomiarowych. 
+Każdy rekord składa się z identyfikatora, znacznika czasu, temperatury oraz wilgotności. 
+Dane mają charakter szeregu czasowego, dlatego kolejność obserwacji jest istotna dla metod wykorzystujących okno kroczące lub predykcję sekwencyjną.
+W danych oryginalnych temperatura zawierała 43 braków, średnią 19.3420, medianę 19.6700 i odchylenie standardowe 5.1346. 
+Wilgotność zawierała 57 braków, średnią 46.7172, medianę 47.1900 i odchylenie standardowe 14.0939.
+Obecność braków i wartości skrajnych uzasadnia użycie zarówno metod wygładzających, jak i metod wykrywania obserwacji odstających. 
+Artykuły dotyczące danych środowiskowych i miejskich wskazują, że w takich zbiorach typowe są jednocześnie braki danych, lokalne anomalie oraz zakłócenia wynikające z pracy czujników \cite{bib:ioe1}, \cite{bib:ioe7}.
+
+\section{Metodyka analizy danych IoE}
+
+W analizie zastosowano pięć metod. 
+Dla metod wygładzających wykorzystano warianty z oknem wycentrowanym, ponieważ raport ma charakter analizy historycznej, a nie predykcji online. 
+Oznacza to, że do obliczenia wartości w punkcie środkowym można wykorzystać obserwacje wcześniejsze i późniejsze. 
+Takie podejście dobrze sprawdza się przy wizualnej ocenie przebiegu szeregu czasowego.
+Dla metod wykrywania obserwacji odstających wykorzystano warianty lokalne, liczone w oknie kroczącym. 
+Jest to ważne, ponieważ globalna średnia lub globalne kwartyle mogą gorzej działać w danych czasowych, w których poziom sygnału zmienia się w czasie. 
+Artykuły o jakości danych czasowych wskazują, że lokalne okna pomagają uwzględnić krótkoterminowe trendy i sezonowość~\cite{bib:ioe2},~\cite{bib:ioe7}.
+Dla filtru Kalmana wykorzystano jednowymiarowy wariant rekurencyjny. 
+Stan początkowy został wyznaczony z mediany, a dla brakujących pomiarów zastosowano predykcję. 
+Takie rozwiązanie zachowuje ciągłość szeregu i jest zgodne z ideą filtru, który łączy wcześniejsze oszacowanie z nowym pomiarem~\cite{bib:ioe5}.
+\begin{itemize}
+\item{Moving Average}: okno wycentrowane, domyślnie 5 próbek.
+\item{Median Filter}: okno wycentrowane, domyślnie 5 próbek.
+\item{Z-score}: wariant rolling\_robust, okno 25 próbek, skala Sn.
+\item{IQR}: wariant rolling, okno 25 próbek, mnożnik 1.5.
+\item{Kalman}: Filter: stan początkowy z mediany, predykcja dla wartości NaN.
+\end{itemize}
+
+\section{Opis zastosowanych metod w danych IoE}
+
+\subsection{Moving Average}
+
+
+Średnia krocząca jest filtrem liniowym, który
+zastępuje bieżącą wartość średnią z wartości znajdujących
+się w oknie. W raporcie zastosowano okno wycentrowane, czyli dla
+danego punktu wykorzystywane są obserwacje z jego najbliższego
+sąsiedztwa. Metoda jest często stosowana do ograniczania
+krótkotrwałego szumu w danych sensorowych~\cite{bib:ioe1},~\cite{bib:ioe4},~\cite{bib:ioe5}.
+
+
+ M\textsubscript{t}
+= (1/N) * \textbf{$\Sigma$}X\textsubscript{i}
+
+
+gdzie:
+
+
+\begin{itemize}
+
+	\item M\textsubscript{t}
+	oznacza wartość po wygładzeniu w chwili t,
+
+
+
+	\item X\textsubscript{i}
+	oznacza oryginalny pomiar,
+
+
+
+	\item N to liczba obserwacji w oknie,
+
+
+
+	\item W\textsubscript{t}
+	to okno wokół analizowanego punktu.
+
+
+
+\end{itemize}
+
+Im większe okno, tym
+silniejsze wygładzenie, ale także większe ryzyko spłaszczenia
+lokalnych zmian.
+
+
+Wartości NaN przed obliczeniem
+średniej są uzupełniane interpolacją liniową. Dzięki temu
+metoda daje wynik dla całego szeregu, ale trzeba pamiętać, że
+wartości odtworzone są oszacowaniem, a nie rzeczywistym pomiarem.
+
+
+Średnia krocząca działa jak
+filtr dolnoprzepustowy, ponieważ ogranicza szybkie, krótkotrwałe
+wahania sygnału, a zachowuje wolniejsze zmiany trendu. W praktyce
+oznacza to, że pojedynczy skok temperatury lub wilgotności zostaje
+rozłożony na kilka sąsiednich próbek.
+
+
+Zaletą tej metody jest
+prostota i łatwa interpretacja, natomiast ograniczeniem jest
+wrażliwość na wartości skrajne. Jeżeli w oknie pojawi się
+bardzo duży lub bardzo mały pomiar, zostanie on uwzględniony w
+średniej i może przesunąć wynik filtracji.
+
+
+
+
+\subsection{Median Filter}
+
+
+Filtr medianowy jest filtrem nieliniowym. Nie
+liczy średniej, lecz wybiera medianę z wartości znajdujących się
+w oknie. Oznacza to, że pojedynczy skrajny pomiar ma mniejszy wpływ
+na wynik niż w przypadku średniej kroczącej. W literaturze filtr
+medianowy jest wykorzystywany jako preprocessor usuwający oczywiste
+anomalie w danych z czujników~\cite{bib:ioe1},~\cite{bib:ioe4},~\cite{bib:ioe6}.
+
+
+Y\textsubscript{t}
+= median(X\textsubscript{i})
+
+
+gdzie:
+
+
+\begin{itemize}
+
+	\item i należy do okna W\textsubscript{t},
+
+
+
+	\item Y\textsubscript{t}
+	oznacza wartość po filtracji,
+
+
+
+	\item X\textsubscript{i}
+	to pomiary w oknie,
+
+
+
+	\item median oznacza wartość środkową po
+	uporządkowaniu elementów.
+
+
+
+\end{itemize}
+
+Dla okna o rozmiarze 5 mediana
+jest trzecią wartością po posortowaniu pięciu obserwacji.
+
+
+Tak jak w przypadku średniej
+kroczącej, wartości NaN są wcześniej uzupełniane interpolacją
+liniową. Metoda zachowuje pełną długość szeregu i dobrze nadaje
+się do tłumienia pojedynczych zakłóceń.
+
+
+Filtr medianowy jest
+odporniejszy na pojedyncze zakłócenia impulsowe niż średnia
+krocząca, ponieważ nie oblicza sumy wartości, lecz wybiera element
+środkowy uporządkowanego zbioru. Dzięki temu ekstremalny pomiar
+może zostać pominięty bez silnego wpływu na wynik.
+
+
+Nieliniowy charakter filtru
+oznacza, że wyniku nie można opisać jako prostej kombinacji
+liniowej próbek wejściowych. Z tego powodu filtr medianowy dobrze
+usuwa pojedyncze piki, ale może inaczej zachowywać krawędzie i
+nagłe zmiany sygnału niż klasyczne filtry liniowe.
+
+
+
+
+\subsection{Z-score Outlier Removal}
+
+
+Z-score mierzy, jak daleko dana obserwacja
+znajduje się od typowego poziomu danych. W klasycznej wersji używa
+się średniej i odchylenia standardowego, ale w tym raporcie
+zastosowano wariant rolling\_robust, czyli lokalny Z-score liczony w
+oknie kroczącym z medianą i estymatorem skali Sn. Takie podejście
+jest bliższe artykułom, które omawiają odporne warianty Z-score
+dla danych czasowych i sensorowych~\cite{bib:ioe2},~\cite{bib:ioe4},~\cite{bib:ioe7}.
+
+
+Uproszczony wzór:
+
+Z\textsubscript{i}
+= (X\textsubscript{i}
+- mediana(W\textsubscript{i}))
+/ Sn(W\textsubscript{i})
+
+
+gdzie:
+
+
+\begin{itemize}
+
+	\item X\textsubscript{i}
+	oznacza analizowaną obserwację,
+
+
+
+	\item W\textsubscript{i}
+	to lokalne okno wokół tej obserwacji,
+
+
+
+	\item mediana(W\textsubscript{i})
+	to typowy poziom w tym oknie,
+
+
+
+	\item Sn(W\textsubscript{i}) to odporna miara rozrzutu.
+
+
+
+\end{itemize}
+
+Jeśli wartość bezwzględna
+Z\textsubscript{i}
+przekracza ustalony próg, obserwacja jest oznaczana jako odstająca.
+
+
+Wartości wykryte jako
+odstające są zastępowane przez NaN w kolumnie wynikowej. Metoda
+nie wygładza szeregu, tylko usuwa lokalnie nietypowe punkty.
+
+
+Klasyczny Z-score zakłada, że
+odchylenie od typowego poziomu można interpretować względem
+odchylenia standardowego. W danych rzeczywistych, szczególnie
+sensorowych, rozkład często nie jest idealnie normalny, dlatego
+wariant odporny z medianą i estymatorem Sn zmniejsza wpływ
+pojedynczych ekstremalnych wartości na próg detekcji.
+
+
+Wariant lokalny analizuje
+obserwację w kontekście najbliższych próbek, a nie całej kolumny
+danych. Jest to ważne w szeregach czasowych, ponieważ temperatura i
+wilgotność mogą zmieniać swój poziom w czasie, przez co jedna
+globalna średnia nie zawsze dobrze opisuje cały przebieg.
+
+
+
+
+\subsection{IQR Outlier Removal}
+
+
+IQR wykorzystuje kwartyle, czyli wartości
+dzielące uporządkowany zbiór danych. W raporcie zastosowano
+wariant rolling, w którym kwartyle są liczone lokalnie w oknie
+kroczącym. Dzięki temu granice outlierów dopasowują się do
+lokalnego poziomu szeregu czasowego [2], [3], [7].
+
+
+IQR = Q\textsubscript{3}
+- Q\textsubscript{1}
+
+dolna
+granica = Q\textsubscript{1}
+- 1.5 * IQR
+
+górna granica = Q\textsubscript{3}
++ 1.5 * IQR
+
+
+gdzie:
+
+
+
+\begin{itemize}
+
+	\item Q\textsubscript{1}
+	oznacza pierwszy kwartyl,
+
+
+
+	\item Q\textsubscript{3}
+	trzeci kwartyl,
+
+
+
+	\item IQR rozstęp międzykwartylowy.
+
+
+
+\end{itemize}
+
+Obserwacja jest outlierem,
+jeśli znajduje się poniżej dolnej granicy albo powyżej górnej
+granicy.
+
+
+Metoda IQR nie zakłada
+normalności rozkładu. W tym projekcie wartości odstające są
+zamieniane na NaN, dlatego liczba braków po zastosowaniu metody może
+wzrosnąć.
+
+
+Metoda IQR opiera się na
+środkowej części rozkładu danych, czyli na zakresie między
+pierwszym i trzecim kwartylem. Dzięki temu jest mniej wrażliwa na
+wartości skrajne niż metody bazujące na średniej i odchyleniu
+standardowym.
+
+
+Mnożnik 1.5 określa szerokość dopuszczalnego przedziału wartości.
+Mniejszy mnożnik zwiększa czułość metody i wykrywa więcej outlierów, natomiast większy mnożnik działa łagodniej i pozostawia więcej obserwacji w zbiorze.
+
+\subsection{Kalman Filter}
+
+
+Filtr Kalmana jest rekurencyjną metodą estymacji
+sygnału. W każdym kroku filtr najpierw przewiduje kolejną wartość,
+a następnie koryguje to przewidywanie na podstawie nowego pomiaru.
+Artykuły dotyczące danych sensorowych pokazują, że filtr Kalmana
+może stabilizować sygnał i ograniczać wpływ szumu pomiarowego ~\cite{bib:ioe1},~\cite{bib:ioe2},~\cite{bib:ioe4},~\cite{bib:ioe5}.
+
+
+W uproszczonej wersji
+jednowymiarowej użyto wzorów:
+
+
+x\textsubscript{pred} = x\textsubscript{poprz},P\textsubscript{pred}
+= P\textsubscript{poprz} + Q, K = P\textsubscript{pred} / (P\textsubscript{pred} +
+R), x\textsubscript{now} = x\textsubscript{pred} + K * (z - x\textsubscript{pred})
+
+
+gdzie:
+
+
+\begin{itemize}
+
+	\item x oznacza oszacowaną wartość sygnału,
+
+
+
+	\item P niepewność oszacowania,
+
+
+
+	\item Q wariancję procesu,
+
+
+
+	\item R wariancję pomiaru,
+
+
+
+	\item K wzmocnienie Kalmana,
+
+
+
+	\item z nowy pomiar.
+
+
+
+\end{itemize}
+
+W raporcie stan początkowy
+został wyznaczony z mediany, ponieważ mediana jest mniej wrażliwa
+na skrajne obserwacje niż średnia. Gdy w danych pojawia się NaN,
+filtr wykonuje samą predykcję, dzięki czemu zachowuje ciągłość
+szeregu.
+
+
+Teoretyczną podstawą filtru
+Kalmana jest założenie, że obserwowany pomiar składa się z
+rzeczywistego stanu oraz zakłócenia pomiarowego. Filtr próbuje
+więc oszacować stan ukryty, którego nie znamy bezpośrednio,
+korzystając jednocześnie z modelu zmian sygnału i z kolejnych
+pomiarów.
+
+
+Parametr Q opisuje niepewność
+procesu, czyli to, jak bardzo dopuszczamy naturalne zmiany sygnału
+między kolejnymi próbkami. Parametr R opisuje niepewność pomiaru,
+czyli poziom zaufania do czujnika. Większe R powoduje silniejsze
+wygładzenie, a większe Q sprawia, że filtr szybciej reaguje na
+nowe pomiary.
+
+
+W odróżnieniu od Z-score i
+IQR filtr Kalmana nie usuwa punktów odstających wprost. Jego
+głównym zadaniem jest sekwencyjna estymacja wartości sygnału,
+dlatego dobrze sprawdza się wtedy, gdy chcemy otrzymać ciągły
+przebieg bez przerw wynikających z braków danych.
+
+\section{Wyniki analizy danych IoE}
+
+Wyniki przedstawiono osobno dla temperatury i
+wilgotności. Tabele zawierają liczbę braków danych, podstawowe
+miary położenia i rozrzutu oraz liczbę wykrytych obserwacji
+odstających dla metod Z-score i IQR.
+
+
+% przeklejane z docx przez Texify IDEA, cud że w ogóle działą
+	\begin{table}
+    \centering
+    \begin{tabular}{|l|r|r|r|r|r|r|l|}
+        \toprule
+        \textbf{Metoda} & \textbf{NaN} & \textbf{Średnia} & \textbf{Mediana} & \textbf{Min} & \textbf{Max} & \textbf{Odch. std.} & \textbf{Outliery} \\
+        \midrule
+				Original
+			 &
+				43
+			 &
+				19.3420
+			 &
+				19.6700
+			 &
+				9.6700
+			 &
+				36.7700
+			 &
+				5.1346
+			 &
+				-
+			 \\
+
+				Moving
+				Average
+
+
+			 &
+				0
+
+
+			 &
+				19.3533
+
+
+			 &
+				19.6060
+
+
+			 &
+				10.1260
+
+
+			 &
+				35.8670
+
+
+			 &
+				5.0836
+
+
+			 &
+				-
+
+
+			 \\
+
+				Median
+				Filter
+
+
+			 &
+				0
+
+
+			 &
+				19.3457
+
+
+			 &
+				19.6700
+
+
+			 &
+				10.0000
+
+
+			 &
+				36.4500
+
+
+			 &
+				5.1068
+
+
+			 &
+				-
+
+
+			 \\
+
+				Z-score
+
+
+			 &
+				46
+
+
+			 &
+				19.3166
+
+
+			 &
+				19.6700
+
+
+			 &
+				9.6700
+
+
+			 &
+				36.7700
+
+
+			 &
+				5.1124
+
+
+			 &
+				3
+
+
+			 \\
+
+				IQR
+
+
+			 &
+				49
+
+
+			 &
+				19.3442
+
+
+			 &
+				19.6700
+
+
+			 &
+				9.6700
+
+
+			 &
+				36.7700
+
+
+			 &
+				5.1359
+
+
+			 &
+				6
+
+
+			 \\
+
+				Kalman
+				Filter
+
+
+			 &
+				0
+
+
+			 &
+				19.3769
+
+
+			 &
+				19.7404
+
+
+			 &
+				10.3375
+
+
+			 &
+				35.2232
+
+
+			 &
+				4.9174
+
+
+			 &
+				-
+
+
+			 \\
+        \bottomrule
+    \end{tabular}
+    \caption{Statystyki dla zmiennej \emph{temperature}}
+    \label{tab:wynikitemp}
+\end{table}
+
+	\begin{table}
+    \centering
+    \begin{tabular}{|l|r|r|r|r|r|r|l|}
+        \toprule
+        \textbf{Metoda} & \textbf{NaN} & \textbf{Średnia} & \textbf{Mediana} & \textbf{Min} & \textbf{Max} & \textbf{Odch. std.} & \textbf{Outliery} \\
+        \midrule
+
+				Original
+
+
+			 &
+				57
+
+
+			 &
+				46.7172
+
+
+			 &
+				47.1900
+
+
+			 &
+				-24.7000
+
+
+			 &
+				76.9900
+
+
+			 &
+				14.0939
+
+
+			 &
+				-
+
+
+			 \\
+
+				Moving
+				Average
+
+
+			 &
+				0
+
+
+			 &
+				46.6736
+
+
+			 &
+				47.0620
+
+
+			 &
+				-24.6680
+
+
+			 &
+				75.1580
+
+
+			 &
+				13.7283
+
+
+			 &
+				-
+
+
+			 \\
+
+				Median
+				Filter
+
+
+			 &
+				0
+
+
+			 &
+				46.6767
+
+
+			 &
+				47.1900
+
+
+			 &
+				-24.7000
+
+
+			 &
+				75.5700
+
+
+			 &
+				13.9231
+
+
+			 &
+				-
+
+
+			 \\
+
+				Z-score
+
+
+			 &
+				70
+
+
+			 &
+				46.7998
+
+
+			 &
+				47.1900
+
+
+			 &
+				-24.7000
+
+
+			 &
+				76.9900
+
+
+			 &
+				13.9084
+
+
+			 &
+				13
+
+
+			 \\
+
+				IQR
+
+
+			 &
+				60
+
+
+			 &
+				46.6968
+
+
+			 &
+				47.1900
+
+
+			 &
+				-24.7000
+
+
+			 &
+				76.9900
+
+
+			 &
+				14.0959
+
+
+			 &
+				3
+
+
+			 \\
+
+				Kalman
+
+
+			 &
+				0
+
+
+			 &
+				46.5792
+
+
+			 &
+				46.7445
+
+
+			 &
+				-15.5500
+
+
+			 &
+				72.6096
+
+
+			 &
+				13.1900
+
+
+			 &
+				-
+
+
+			 \\
+        \bottomrule
+    \end{tabular}
+    \caption{Statystyki dla zmiennej \emph{humidity}}
+    \label{tab:wynikihum}
+\end{table}
+
+
+Dla temperatury (tabela~\ref{tab:wynikitemp}) najniższe odchylenie standardowe
+uzyskano dla filtru Kalmana z początkowym stanem wyznaczonym z
+mediany. Dla wilgotności również filtr Kalmana zmniejszył rozrzut
+względem danych oryginalnych, natomiast lokalny IQR wykrył mniej
+outlierów niż lokalny odporny Z-score.
+
+
+Moving Average zmniejszył
+odchylenie standardowe z 5.1346 do 5.0836, Median Filter do 5.1068, a
+filtr Kalmana do 4.9174. Oznacza to, że najsilniejsze wygładzenie
+temperatury uzyskano dla filtru Kalmana, który nie tylko uśrednia
+lokalne wartości, ale rekurencyjnie estymuje najbardziej
+prawdopodobny przebieg sygnału.
+
+
+W tabeli dla temperatury warto
+zwrócić uwagę na różnicę między metodami wygładzającymi a
+metodami wykrywania outlierów. Z-score i IQR nie mają za zadanie
+wygładzać całego przebiegu, dlatego po ich zastosowaniu liczba
+braków wzrasta odpowiednio do 46 i 49. Oznacza to, że poza
+pierwotnymi brakami danych metody te oznaczyły dodatkowe punkty jako
+obserwacje odstające: Z-score wykrył 3 takie przypadki, a IQR 6.
+
+
+Tabela dla wilgotności (\ref{tab:wynikihum})
+wskazuje, że ta zmienna była bardziej problematyczna niż
+temperatura, ponieważ miała większy rozrzut i bardziej skrajne
+minimum wynoszące -24.7000. Kalman Filter zmniejszył odchylenie
+standardowe wilgotności z 14.0939 do 13.1900 oraz ograniczył zakres
+wartości do przedziału od -15.5500 do 72.6096. Jest to efekt
+predykcyjno-wygładzający, a nie usunięcie rekordów z szeregu.
+
+
+Porównanie Z-score i IQR dla
+wilgotności pokazuje różną czułość metod. Lokalny odporny
+Z-score wykrył 13 outlierów i zwiększył liczbę braków do 70,
+natomiast lokalny IQR wykrył tylko 3 outliery i zwiększył liczbę
+braków do 60. W praktyce oznacza to, że Z-score był bardziej
+restrykcyjny dla wilgotności, a IQR zachował więcej oryginalnych
+pomiarów.
+
+
+
+\section{Interpretacja wykresów danych IoE}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=16cm]{figures/rys1movavg}
+    \caption{Moving Average z oknem wycentrowanym.}
+    \label{fig:rys1movavg}
+\end{figure}
+
+
+Wykres z rys.~\ref{fig:rys1movavg} pokazuje, że średnia krocząca wygładza
+krótkotrwałe wahania temperatury i wilgotności, zachowując ogólny
+przebieg sygnału. Metoda uzupełnia braki po interpolacji, dlatego w
+wyniku nie występują wartości NaN. Dla temperatury odchylenie
+standardowe spadło do 5.0836, a dla wilgotności do 13.7283.
+
+
+Na wykresie Moving Average
+linia po preprocessingu powinna być interpretowana jako lokalne
+uśrednienie sygnału, a nie jako nowy pomiar rzeczywisty. Metoda
+zmniejsza ostre przejścia między sąsiednimi punktami, dlatego
+przebieg temperatury i wilgotności staje się bardziej płynny.
+Jednocześnie średnia krocząca zachowuje ogólny trend danych, co
+widać po tym, że średnie wartości po filtracji są bardzo
+zbliżone do danych oryginalnych.
+
+
+Wyniki liczbowe potwierdzają
+obserwację z wykresu: dla temperatury odchylenie standardowe spadło
+z 5.1346 do 5.0836, a dla wilgotności z 14.0939 do 13.7283. Spadek
+nie jest bardzo duży, ponieważ metoda nie usuwa agresywnie punktów
+odstających, tylko łagodnie rozprasza ich wpływ na sąsiednie
+próbki.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=16cm]{figures/rys2filmed}
+    \caption{Filtr medianowy z oknem wycentrowanym.}
+    \label{fig:rys2filmed}
+\end{figure}
+
+Filtr medianowy (rys.~\ref{fig:rys2filmed}) zachowuje przebieg podobny do
+danych oryginalnych, ale ogranicza wpływ pojedynczych skrajnych
+wartości. W porównaniu ze średnią kroczącą jest mniej podatny
+na pojedyncze skoki, ponieważ wybiera wartość środkową z okna.
+Po filtracji liczba NaN spadła do zera dla obu zmiennych.
+
+
+Na wykresie filtru medianowego
+ważne jest to, że metoda nie tworzy wyniku przez uśrednianie, lecz
+przez wybór wartości środkowej z lokalnego okna. Dlatego
+pojedyncze piki są tłumione, ale typowy poziom temperatury i
+wilgotności pozostaje bliski danym wejściowym. Widać to również
+w medianach: dla temperatury mediana po filtracji wynosi 19.6700,
+czyli tyle samo co w danych oryginalnych.
+
+
+Dla wilgotności filtr
+medianowy zmniejszył odchylenie standardowe z 14.0939 do 13.9231,
+czyli słabiej niż filtr Kalmana, ale bez silnego przesuwania środka
+rozkładu. Oznacza to, że metoda jest dobrym kompromisem wtedy, gdy
+chcemy ograniczyć pojedyncze zakłócenia, ale nie chcemy nadmiernie
+wygładzać całego szeregu.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=16cm]{figures/rys3}
+    \caption{Lokalny odporny Z-score.}
+    \label{fig:rys3}
+\end{figure}
+
+Wykres z rys.~\ref{fig:rys3} przedstawia wartości po usunięciu punktów
+uznanych za lokalne outliery. Dla temperatury wykryto 3 obserwacje
+odstające, a dla wilgotności 13. W miejscach usuniętych punktów
+pojawiają się przerwy lub wartości NaN, ponieważ metoda nie
+wygładza danych, lecz oznacza lokalnie nietypowe obserwacje.
+
+
+Na wykresie Z-score przerwy lub
+brakujące punkty są bezpośrednim efektem działania metody:
+obserwacje, których lokalny wynik Z przekroczył próg, zostały
+zastąpione wartością NaN. Dlatego tej metody nie należy
+interpretować jako klasycznego filtru wygładzającego. Jej główną
+funkcją jest wskazanie miejsc, w których pomiar był nietypowy
+względem sąsiednich obserwacji.
+
+
+Dla temperatury lokalny odporny
+Z-score wykrył tylko 3 outliery, co oznacza, że większość zmian
+temperatury mieściła się w lokalnym kontekście szeregu. Dla
+wilgotności wykryto 13 outlierów, co sugeruje większą
+niestabilność lub większą liczbę zakłóceń w tej zmiennej.
+Jest to zgodne z większym odchyleniem standardowym wilgotności w
+danych oryginalnych.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=16cm]{figures/rys4}
+    \caption{Lokalny IQR.}
+    \label{fig:rys4}
+\end{figure}
+
+Lokalny IQR (rys.~\ref{fig:rys4}) wykrył 6 outlierów dla temperatury i
+3 dla wilgotności. W porównaniu z odpornym Z-score metoda była
+bardziej zachowawcza dla wilgotności. Wartości odstające zostały
+zastąpione przez NaN, więc metoda zwiększa liczbę braków, ale
+pozwala zachować oryginalne wartości nieuznane za anomalie.
+
+
+Wykres IQR należy odczytywać
+podobnie jak wykres Z-score, ale z uwzględnieniem innej logiki
+detekcji. IQR porównuje punkt z zakresem międzykwartylowym w
+lokalnym oknie, dlatego jest mniej zależny od średniej i odchylenia
+standardowego. Na wykresie oznacza to, że metoda usuwa tylko punkty
+wychodzące poza lokalne granice wyznaczone przez Q1, Q3 i mnożnik
+1.5.
+
+
+Wyniki pokazują, że IQR był
+bardziej czuły od Z-score dla temperatury, bo wykrył 6 outlierów
+zamiast 3. Dla wilgotności sytuacja była odwrotna: IQR wykrył 3
+outliery, a Z-score 13. Oznacza to, że wybór metody ma realny wpływ
+na interpretację jakości danych i nie powinien być traktowany jako
+decyzja neutralna.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=16cm]{figures/rys5}
+    \caption{Jednowymiarowy filtr Kalmana.}
+    \label{fig:rys5}
+\end{figure}
+
+Filtr Kalmana (rys.~\ref{fig:rys5}) daje najbardziej płynny przebieg
+spośród analizowanych metod i zachowuje pełną długość szeregu.
+Dla brakujących pomiarów stosowana jest predykcja, dlatego liczba
+NaN spada do zera. Dla temperatury odchylenie standardowe spadło do
+4.9174, a dla wilgotności do 13.1900.
+
+
+Na wykresie filtru Kalmana
+widoczny jest ciągły przebieg, ponieważ metoda nie usuwa rekordów,
+lecz estymuje wartość sygnału krok po kroku. Dla braków danych
+filtr wykonuje predykcję, dlatego liczba NaN spada do zera zarówno
+dla temperatury, jak i wilgotności. To odróżnia go od Z-score i
+IQR, które zwiększają liczbę braków przez oznaczanie outlierów.
+
+
+W tabelach widać, że Kalman
+Filter najmocniej zmniejszył odchylenie standardowe: do 4.9174 dla
+temperatury i do 13.1900 dla wilgotności. Wykres potwierdza więc
+wynik liczbowy, ponieważ linia po filtracji jest gładsza i mniej
+podatna na nagłe skoki. Jednocześnie metoda zachowuje trend zmian,
+dlatego nadaje się do rekonstrukcji ciągłego przebiegu
+pomiarowego.
+
+\section{Analiza wyników danych IoE}
+
+
+Porównanie metod pokazuje, że nie istnieje jedna
+uniwersalna metoda preprocessingu. Moving Average i Median Filter są
+przydatne, gdy celem jest wygładzenie szeregu i zachowanie pełnej
+liczby obserwacji. Ich działanie jest łatwe do zrozumienia, a
+wyniki są stabilne, jednak metody te mogą także ukrywać
+krótkotrwałe, ale rzeczywiste zmiany sygnału.
+
+
+Metody Z-score i IQR pełnią
+inną rolę. Nie służą głównie do wygładzania, lecz do
+wykrywania punktów nietypowych. Warianty lokalne lepiej odpowiadają
+charakterowi danych czasowych, ponieważ porównują obserwację z
+jej najbliższym otoczeniem, a nie z całą kolumną. Dzięki temu są
+bardziej wrażliwe na lokalne anomalie, ale ich wynik zależy od
+wielkości okna i wybranego progu.
+
+
+Filtr Kalmana jest najbardziej
+zaawansowaną metodą spośród zastosowanych w projekcie. Jego
+przewagą jest sekwencyjny sposób działania: filtr nie tylko
+wygładza dane, ale także estymuje najbardziej prawdopodobną
+wartość sygnału. Jednocześnie wymaga świadomego doboru
+parametrów Q i R, które określają zaufanie do modelu oraz
+pomiaru.
+
+
+Wyniki są zgodne z
+obserwacjami z literatury: proste filtry mogą znacząco poprawiać
+stabilność sygnału, metody statystyczne skutecznie wykrywają
+outliery, a filtr Kalmana jest użyteczny w danych sensorowych, gdzie
+ważna jest ciągłość i redukcja szumu~\cite{bib:ioe1},~\cite{bib:ioe2},~\cite{bib:ioe3},~\cite{bib:ioe4},~\cite{bib:ioe5},~\cite{bib:ioe6},~\cite{bib:ioe7}.
+
+\section{Metodyka przetwarzania danych sieciowych}
 
 Wykrywanie anomalii w rzeczywistych warunkach operacyjnych wymaga eliminacji podatności modeli uczenia maszynowego na błędy wynikające ze specyfiki danych testowych. 
 W ramach realizowanego projektu zaprojektowano i zaimplementowano modularny potok przetwarzania danych (ang. \emph{data pipeline}), którego nadrzędnym celem była transformacja surowych rekordów sieciowych do postaci niezależnej od konfiguracji środowiska laboratoryjnego. 
@@ -548,10 +1606,23 @@ Mógłby być to dobry wybór dla wykrywania anomalii w dłuższych sesji, zamia
 \subsubsection{Podsumowanie i wnioski końcowe}
 
 % czujniki
+\subsection{Dane z czujników IoE}
+
+\begin{enumerate}
+
+
+\item Wszystkie zastosowane metody poprawiają dane, ale robią to na różne sposoby: filtry wygładzające redukują szum, a Z-score i IQR wykrywają obserwacje odstające.
+\item Najsilniejsze zmniejszenie odchylenia standardowego temperatury uzyskano dla filtru Kalmana.
+\item Dla wilgotności lokalny odporny Z-score wykrył więcej obserwacji odstających niż lokalny IQR, co wskazuje na większą czułość tej metody.
+\item Moving Average i Median Filter są najprostsze do interpretacji i dobrze nadają się do wstępnego wygładzania przebiegów.
+\item Warianty lokalne Z-score i IQR są lepiej dopasowane do danych czasowych niż wersje globalne, ponieważ uwzględniają lokalny kontekst obserwacji.
+\item Filtr Kalmana jest dobrym wyborem, gdy celem jest ciągły, wygładzony sygnał bez usuwania rekordów z szeregu.
+\end{enumerate}
 
 % ruch sieciowy
+\subsection{Dane o ruchu sieciowym}
 
-W przypadku danych o ruchu sieciowym rzeprowadzone eksperymenty z użyciem trzech różnorodnych algorytmów uczenia maszynowego pozwoliły wyciągnięcie pewnych obserwacji.
+W przypadku danych o ruchu sieciowym przeprowadzone eksperymenty, z użyciem trzech różnorodnych algorytmów uczenia maszynowego, pozwoliły wyciągnięcie pewnych obserwacji.
 Zastosowanie wielu prób w różnych etapach transformacji pozwoliło ustalić sytuacje w których najlepiej funkcjonują dane podejścia:
 
 \begin{enumerate}
@@ -575,6 +1646,18 @@ Ostatecznie, uzyskane wyniki potwierdzają sugerują, że kluczem do skutecznej 
 \addcontentsline{toc}{section}{Literatura}
 
 \begin{thebibliography}{4}
+% ioe
+
+\bibitem{bib:ioe1} Badrudeen, A. T., Sahoo, D., Sawyer, C. B., Pike, J. W., Harmel, R. D. A critical review of statistical, signal processing and machine learning methods for continuous and high-frequency water quality data improvement.
+\bibitem{bib:ioe2} Tawakuli, A., Havers, B., Gulisano, V., Kaiser, D., Engel, T. Survey: Time-series data preprocessing: A survey and an empirical analysis. Journal of Engineering Research, 13, 674-711, 2025.
+\bibitem{bib:ioe3} Yaro, A. S., Maly, F., Prazak, P. Outlier Detection in Time-Series Receive Signal Strength Observation Using Z-Score Method with Sn Scale Estimator for Indoor Localization. Applied Sciences, 13, 3900, 2023. https://doi.org/10.3390/app13063900
+\bibitem{bib:ioe4} Sung, S.-H., Seo, C.-S., Pokojovy, M., Kim, S. A Comparative Analysis of Preprocessing Filters for Deep Learning-Based Equipment Power Efficiency Classification and Prediction Models. Applied Sciences, 15, 11277, 2025. https://doi.org/10.3390/app152011277
+\bibitem{bib:ioe5} Rinanto, N., Asrining Wuri, A. P., Adhitya, R. Y., Ismail, H. Comparative Simulation of Kalman Filter and Moving Average on Siemens S7-1200 PLC-Based Loadcell Sensor Readings. Sustainable Energy Control and Optimization, 2025. http://dx.doi.org/10.62762/SECO.2025.538779
+\bibitem{bib:ioe6} Zhang, M., Guo, J., Li, X., Jin, R. Data-Driven Anomaly Detection Approach for Time-Series Streaming Data. Sensors, 20, 5646, 2020.
+\bibitem{bib:ioe7} AlSalehy, A. S., Bailey, M. Improving Time Series Data Quality: Identifying Outliers and Handling Missing Values in a Multilocation Gas and Weather Dataset. Smart Cities, 8, 82, 2025. https://doi.org/10.3390/smartcities8030082
+
+% sieciowy
+
 \bibitem{bib:datasetsieciowy} https://www.kaggle.com/datasets/mrwellsdavid/unsw-nb15/data?select=UNSW\_NB15\_testing-set.csv. Dostęp 31.05.2026.
 \end{thebibliography}
 
