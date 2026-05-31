@@ -1206,11 +1206,12 @@ Proces ten został dokonany dopiero po złączeniu plików w celu uniknięcia ni
 
 \section{Wyniki eksperymentów i analiza porównawcza dla danych sieciowych}
 
-W celu oceny wpływu zaprojektowanego procesu przetwarzania danych na skuteczność wykrywania anomalii sieciowych, przeprowadzono testy porównawcze na trzech etapach:
+W celu oceny wpływu zaprojektowanego procesu przetwarzania danych na skuteczność wykrywania anomalii sieciowych, przeprowadzono testy porównawcze na czterech etapach:
 \begin{itemize}
 \item dla danych surowych z dodanymi etykietami
 \item dla danych po oczyszczeniu i naprawie
 \item dla danych zgrupowanych
+\item dla danych zgrupowanych po procesie standaryzacji i skalowania wartości
 \end{itemize}
 We wszystkich przypadkach dane zostały również zgrupowane.
 
@@ -1439,7 +1440,7 @@ W tabeli \ref{tab:cm_logistic_regression} przedstawione zostały macierze pomył
 Podobnie jak w przypadku klasyfikatora histogramowego, widoczny jest minimalny wpływ czyszczenia oraz standaryzacji danych na ostateczną strukturę błędów, przy jednoczesnym drastycznym przemodelowaniu wyników po zastosowaniu agregacji potoku sesyjnego.
 
 Wdrażając grupowanie danych, zaobserwować można skokowy wzrost liczby poprawnie wykrytych anomalii przy jednoczesnym wzroście fałszywych pozytywów. 
-Świadczy to o silnym wpływie parametru zbalansowania wag klas (\texttt{class\_weight='balanced'}), który zmusił model do kategoryzacji większości niejednoznacznych sesji jako potencjalnych ataków, minimalizując krytyczny z punktu widzenia bezpieczeństwa współczynnik fałszywych negatywów (FN spadające do poziomu kilkudziesięciu rekordów).
+Świadczy to o silnym wpływie parametru zbalansowania wag klas, który zmusił model do kategoryzacji większości niejednoznacznych sesji jako potencjalnych ataków, minimalizując krytyczny z punktu widzenia bezpieczeństwa współczynnik fałszywych negatywów (FN spadające do poziomu kilkudziesięciu rekordów).
 
 \begin{table}[ht]
 \caption{Macierze pomyłek dla klasyfikatora Regresji Logistycznej $L_1$}
@@ -1584,7 +1585,7 @@ Przełomowym krokiem metodologicznym okazała się agregacja danych do postaci d
     \item W modelu \textbf{Histogramowego Wzmacniania Gradientu} nastąpiła decentralizacja procesu decyzyjnego – waga zmiennej \texttt{sttl} spadła trzykrotnie (z 0,15 na 0,05), uwalniając masę decyzyjną na rzecz innych cech strukturalnych. 
     Mimo pewnego wzrostu błędów, model zyskał odporność na potencjalne zmiany w syganturach nagłówków.
     \item W \textbf{Regresji Logistycznej} mechanizm regularyzacji $L_1$ (Lasso) zareagował drastycznym zmniejszeniem znaczenia \texttt{ct\_state\_ttl} na rzecz cechy \texttt{dttl} (skok współczynnika do 1,59). 
-    Zastosowanie zbalansowanych wag klas (\texttt{class\_weight='balanced'}) zminimalizowało liczbę fałszywych negatywów do krytycznie niskiego poziomu (jedynie 64 przeoczone ataki), kosztem akceptowalnego wzrostu fałszywych alarmów.
+    Zastosowanie zbalansowanych wag klas zminimalizowało liczbę fałszywych negatywów do krytycznie niskiego poziomu (jedynie 64 przeoczone ataki), kosztem akceptowalnego wzrostu fałszywych alarmów.
     \item Dla \textbf{Lasu Izolacyjnego} konsolidacja ruchu do formy sesji ujednoliciła strukturę geometryczną danych poprawnych. 
     Spowodowało to skokowy wzrost ogólnej dokładności (\emph{accuracy} do 0,96) oraz redukcję błędów obu typów o ponad 80\%, co potwierdza, że nienadzorowane metody podziału przestrzeni wymagają danych opartych o większe zgrupowane zestawy, zamiast pojedynczych punktów.
 \end{itemize}
@@ -1659,6 +1660,7 @@ Ostatecznie, uzyskane wyniki potwierdzają sugerują, że kluczem do skutecznej 
 % sieciowy
 
 \bibitem{bib:datasetsieciowy} https://www.kaggle.com/datasets/mrwellsdavid/unsw-nb15/data?select=UNSW\_NB15\_testing-set.csv. Dostęp 31.05.2026.
+
 \end{thebibliography}
 
 \clearpage
